@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "blueimp-md5": "^2.10.0",
     "moment": "^2.19.1",
     "numeral": "^2.0.6"
   }
