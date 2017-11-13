@@ -8,7 +8,12 @@ class MagentoKleanTransform {
   }
 
   export() {
-    var output = {sales: this.data};
+    var output = {
+      sales: this.data,
+      key: this.configuration.key || "",
+      storeId: this.configuration.storeId || 1,
+      websiteId: this.configuration.websiteId || 1
+    };
     let jsonString = JSON.stringify(output);
     let hash = md5(jsonString + this.configuration.salt);
     output["hash"] = hash;
