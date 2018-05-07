@@ -1,4 +1,4 @@
-const md5 = require('blueimp-md5');
+const numeral = require('numeral');
 
 class MagentoKleanTransform {
     constructor(configuration, data) {
@@ -13,9 +13,6 @@ class MagentoKleanTransform {
             storeId: this.configuration.storeId || 1,
             websiteId: this.configuration.websiteId || 1
         };
-        let jsonString = JSON.stringify(output);
-        let hash = md5(jsonString + this.configuration.salt);
-        output["hash"] = hash;
         return output;
     }
 }
