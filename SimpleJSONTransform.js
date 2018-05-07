@@ -40,8 +40,8 @@ class SimpleJSONTransform {
           // }
 
           var oldValue = this.valueFromPath(path, object.previous) || 0;
-          if (parseInt(oldValue / reportInterval) != parseInt(value / reportInterval)) {
-            var boundary = (parseInt(value / reportInterval) * reportInterval);
+          if (parseInt(oldValue / reportInterval, 10) !== parseInt(value / reportInterval, 10)) {
+            var boundary = (parseInt(value / reportInterval, 10) * reportInterval);
             return numeral(boundary).format();
           } else {
             return "#SKIP_THIS#";
