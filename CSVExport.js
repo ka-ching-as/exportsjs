@@ -100,7 +100,7 @@ class CSVExport {
                     for (let aggregate in row.aggregates) {
                         aggregates[aggregate] = (aggregates[aggregate] || numeral(0)).add(total.value());
                     }
-                    count++;    
+                    count++;
                 }
             } else {
                 for (let index in statement.register_summary[total_type].taxes) {
