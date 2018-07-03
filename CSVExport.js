@@ -1,6 +1,14 @@
 const numeral = require('numeral');
 const moment = require('moment');
 
+function localize(l10nString, language) {
+    if (!l10nString) { return "" }
+    if (typeof (l10nString) !== "object") {
+        return l10nString
+    }
+    return l10nString[language] || l10nString["en"] || l10nString[Object.keys(l10nString)[0]]
+}
+
 class CSVExport {
     constructor(configuration, elements) {
         this.elements = elements;
@@ -322,6 +330,50 @@ class CSVExport {
                 }
                 count++;
             }
+        } else if (row.type.id === "line_items_each") {
+            let outputRows = [];
+            for (let index in sale.summary.line_items) {
+                let lineItem = sale.summary.line_items[index];
+                const amountProperties = ["base_price", "retail_price", "sales_tax_amount", "sub_total", "total", "total_tax_amount", "vat_amount"];
+                const valueProperties = ["barcode", "id", "image_url", "quantity"];
+                const localizedProperties = ["name"];
+
+                const discountAmount = numeral(0).add(lineItem["retail_price"] || 0).subtract(lineItem["sub_total"] || 0);
+                aggregates["discount_amount"] = discountAmount;
+
+                for (const property of amountProperties) {
+                    if (lineItem[property] !== null) {
+                        aggregates[property] = numeral(0).add(lineItem[property]);
+                    }
+                }
+                for (const property of valueProperties) {
+                    if (lineItem[property] !== null) {
+                        overrides[property] = lineItem[property];
+                    }
+                }
+
+                for (const property of localizedProperties) {
+                    if (lineItem[property] !== null) {
+                        overrides[property] = localize(lineItem[property], "da");
+                    }
+                }
+                const type = (sale.voided || false) ? "void" : ((sale.summary.is_return || false) ? "return" : "sale");
+                overrides["type"] = type;
+                overrides["sale_id"] = sale.identifier;
+                overrides["sequence_number"] = sale.sequence_number;
+                overrides["timestamp"] = sale.timing.timestamp_string;
+                overrides["timezone"] = sale.timing.timezone;
+    
+                const sourceProperties = ["cashier_id", "cashier_name", "register_id", "register_name", "market_id", "market_name", "shop_id", "shop_name"];
+                for (const property of sourceProperties) {
+                    if (sale.source[property] !== null) {
+                        overrides[property] = sale.source[property];
+                    }
+                }
+                outputRows.push(this.outputRowShared(row, columns, sale, aggregates, overrides, 1));
+            }
+
+            return outputRows.join("\n");
         } else if (row.type.id === "line_items_by_tax") {
             let rate = row.type.rate;
             for (let index in sale.summary.line_items) {
