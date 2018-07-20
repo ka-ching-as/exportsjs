@@ -31,7 +31,7 @@ class CSVExport {
         var headers = [];
         for (let index in columns) {
             let column = columns[index];
-            headers.push(escape(column.header));
+            headers.push(this.escape(column.header));
         }
         return headers.join(this.separator);
     }
