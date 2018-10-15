@@ -94,7 +94,7 @@ export class CSVExport {
         }
     }
 
-    outputRowForRegisterStatement(row: any, columns: any, statement: any): string {
+    outputRowForRegisterStatement(row: any, columns: any, statement: any): string | null {
         const aggregates: any = {}
         const overrides: any = {}
         var count = 0
@@ -206,8 +206,8 @@ export class CSVExport {
         return this.outputRowShared(row, columns, statement, aggregates, overrides, count)
     }
 
-    outputRowShared(row: any, columns: any, element: any, aggregates: any, overrides: any, count: number): string {
-        if (count === 0) { return "" }
+    outputRowShared(row: any, columns: any, element: any, aggregates: any, overrides: any, count: number): string | null {
+        if (count === 0) { return null }
         let values: any = {}
         for (const key in row.values) {
             values[key] = row.values[key]
@@ -228,7 +228,7 @@ export class CSVExport {
                 }
             }
             if (!requirementsMet) {
-                return ""
+                return null
             }
         }
 
