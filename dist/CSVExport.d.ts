@@ -13,9 +13,9 @@ export declare class CSVExport {
     evaluate(expression: string, object: any): string;
     outputRows(row: any, columns: any, element: any): string[];
     outputRowsForRegisterStatement(row: any, columns: any, statement: any): string[];
-    outputRowForRegisterStatement(row: any, columns: any, statement: any): string;
-    outputRowShared(row: any, columns: any, element: any, aggregates: any, overrides: any, count: number): string;
+    outputRowForRegisterStatement(row: any, columns: any, statement: any): string | null;
+    outputRowShared(row: any, columns: any, element: any, aggregates: any, overrides: any, count: number): string | null;
     outputRowsForSale(row: any, columns: any, sale: any): string[];
-    outputRowForSale(row: any, columns: any, sale: any, filter?: any): string;
+    outputRowForSale(row: any, columns: any, sale: any, filter?: any): string | null;
     export(): string;
 }

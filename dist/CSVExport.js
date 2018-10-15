@@ -219,7 +219,7 @@ class CSVExport {
     }
     outputRowShared(row, columns, element, aggregates, overrides, count) {
         if (count === 0) {
-            return "";
+            return null;
         }
         let values = {};
         for (const key in row.values) {
@@ -240,7 +240,7 @@ class CSVExport {
                 }
             }
             if (!requirementsMet) {
-                return "";
+                return null;
             }
         }
         var rowOutput = [];

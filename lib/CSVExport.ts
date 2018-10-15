@@ -285,7 +285,7 @@ export class CSVExport {
         }
     }
 
-    outputRowForSale(row: any, columns: any, sale: any, filter?: any): string {
+    outputRowForSale(row: any, columns: any, sale: any, filter?: any): string | null {
         const aggregates: any = {}
         const overrides: any = {}
         let count = 0
