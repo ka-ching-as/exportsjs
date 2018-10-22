@@ -1,11 +1,10 @@
-const numeral = require('numeral');
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 class MagentoKleanTransform {
     constructor(configuration, data) {
         this.data = data;
         this.configuration = configuration;
     }
-
     export() {
         var output = {
             sales: this.data,
@@ -16,5 +15,4 @@ class MagentoKleanTransform {
         return output;
     }
 }
-
-module.exports = MagentoKleanTransform;
+exports.MagentoKleanTransform = MagentoKleanTransform;
