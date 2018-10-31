@@ -381,21 +381,28 @@ class CSVExport {
                 const amountProperties = ["base_price", "retail_price", "sales_tax_amount", "sub_total", "total", "total_tax_amount", "vat_amount"];
                 const valueProperties = ["barcode", "id", "image_url", "quantity"];
                 const localizedProperties = ["name"];
+                // BG: Hotfix 5.0.4 
+                // I'm putting the amounts into the overrides dict instead of the aggregates dict so I can control formatting here.
+                // It's necessary because we need to wrap all the values in "" since we use comma for both field separator and decimal separator 
+                // in the CSV sales lines export. We experienced both product names and amounts containing commas which would mess up the resulting file.
+                // TODO: Consider if we should use ; as field separator instead? I still think we would need to wrap in "" though because of freetext and localized amounts.
                 const discountAmount = numeral_1.default(0).add(lineItem["retail_price"] || 0).subtract(lineItem["sub_total"] || 0);
-                aggregates["discount_amount"] = discountAmount;
+                overrides["discount_amount"] = discountAmount;
                 for (const property of amountProperties) {
                     if (lineItem[property] !== null) {
-                        aggregates[property] = numeral_1.default(0).add(lineItem[property]);
+                        const amount = numeral_1.default(0).add(lineItem[property]);
+                        const formatted = this.formatNumber(amount.format('0.00'));
+                        overrides[property] = `"${formatted}"`;
                     }
                 }
                 for (const property of valueProperties) {
                     if (lineItem[property] !== null) {
-                        overrides[property] = lineItem[property];
+                        overrides[property] = `"${lineItem[property]}"`;
                     }
                 }
                 for (const property of localizedProperties) {
                     if (lineItem[property] !== null) {
-                        overrides[property] = localize(lineItem[property], "da");
+                        overrides[property] = `"${localize(lineItem[property], "da")}"`;
                     }
                 }
                 const type = (sale.voided || false) ? "void" : ((sale.summary.is_return || false) ? "return" : "sale");
@@ -418,7 +425,7 @@ class CSVExport {
             let rate = row.type.rate;
             for (let index in sale.summary.line_items) {
                 let lineItem = sale.summary.line_items[index];
-                if (lineItem.taxes.length !== 1 || lineItem.taxes[0].rate !== rate) {
+                if (!lineItem.taxes || lineItem.taxes.length !== 1 || lineItem.taxes[0].rate !== rate) {
                     continue;
                 }
                 for (let aggregate in row.aggregates) {
