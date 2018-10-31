@@ -19,11 +19,12 @@
   },
   "homepage": "https://github.com/ka-ching-as/exportsjs#readme",
   "dependencies": {
+    "@types/numeral": "0.0.25",
     "blueimp-md5": "^2.10.0",
     "moment": "^2.19.1",
     "numeral": "^2.0.6"
   },
   "devDependencies": {
-    "@types/numeral": "0.0.25"
+    "typescript": "2.9.2"    
   }
 }
