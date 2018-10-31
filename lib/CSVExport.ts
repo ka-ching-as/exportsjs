@@ -353,23 +353,23 @@ export class CSVExport {
                 // TODO: Consider if we should use ; as field separator instead? I still think we would need to wrap in "" though because of freetext and localized amounts.
 
                 const discountAmount = numeral(0).add(lineItem["retail_price"] || 0).subtract(lineItem["sub_total"] || 0);
-                aggregates["discount_amount"] = discountAmount;
+                overrides["discount_amount"] = this.formatNumber(discountAmount.format('0.00'))
 
                 for (const property of amountProperties) {
-                    if (lineItem[property] != null) {
+                    if (lineItem[property] !== null && lineItem[property] !== undefined) {
                         const amount = numeral(0).add(lineItem[property]);
                         const formatted = this.formatNumber(amount.format('0.00'))
                         overrides[property] = `"${formatted}"`
                     }
                 }
                 for (const property of valueProperties) {
-                    if (lineItem[property] != null) {
+                    if (lineItem[property] !== null && lineItem[property] !== undefined) {
                         overrides[property] = `"${lineItem[property]}"`
                     }
                 }
 
                 for (const property of localizedProperties) {
-                    if (lineItem[property] != null) {
+                    if (lineItem[property] !== null && lineItem[property] !== undefined) {
                         overrides[property] = `"${localize(lineItem[property], "da")}"`
                     }
                 }
