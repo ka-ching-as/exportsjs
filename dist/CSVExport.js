@@ -379,8 +379,8 @@ class CSVExport {
             for (let index in sale.summary.line_items) {
                 let lineItem = sale.summary.line_items[index];
                 const amountProperties = ["base_price", "retail_price", "sales_tax_amount", "sub_total", "total", "total_tax_amount", "vat_amount"];
-                const valueProperties = ["barcode", "id", "image_url", "quantity"];
-                const localizedProperties = ["name"];
+                const valueProperties = ["barcode", "id", "image_url", "quantity", "variant_id"];
+                const localizedProperties = ["name", "variant_name"];
                 // BG: Hotfix 5.0.4 
                 // I'm putting the amounts into the overrides dict instead of the aggregates dict so I can control formatting here.
                 // It's necessary because we need to wrap all the values in "" since we use comma for both field separator and decimal separator 
