@@ -80,7 +80,7 @@ class EconomicTransform {
         this.data = data;
         this.configuration = configuration;
     }
-    economicSaleTransform() {
+    saleExport() {
         const sale = this.data;
         const parameters = this.configuration;
         const summary = sale.summary;
@@ -164,7 +164,7 @@ class EconomicTransform {
         journalEntry.entries = { financeVouchers: vouchers };
         return JSON.stringify(journalEntry);
     }
-    economicRegisterCloseStatementTransform() {
+    registerCloseStatementExport() {
         const statement = this.data;
         const parameters = this.configuration;
         let date;
