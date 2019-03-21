@@ -129,7 +129,7 @@ class EconomicTransform {
             };
             if (!_.isNil(vatCode)) {
                 voucher.vatAccount = {
-                    vatCode: "U25"
+                    vatCode: vatCode
                 };
             }
             vouchers.push(voucher);
