@@ -5,7 +5,7 @@ interface Account {
     description: string
 }
 
-function lookupYear(years, date): string {
+function lookupYear(years: any, date: string): string {
     for (const entry of years) {
         if (date >= entry.from_date && date <= entry.to_date) {
             return entry.year
@@ -109,7 +109,7 @@ export class EconomicTransform {
 
         const sourceDesc = sourceDescription(sale.source)
 
-        const taxTotals = {}
+        const taxTotals: any = {}
 
         for (const lineItem of sale.summary.line_items) {
             if (lineItem.taxes.length !== 1) {
