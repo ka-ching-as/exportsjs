@@ -21,57 +21,6 @@ function paymentTypeKey(paymentType: string): string {
     return paymentType.replace(".", "-")
 }
 
-function lookupVatCode(rate: number, type: string, parameters: any): string | undefined {
-    for (const tax of parameters.tax_codes) {
-        if (tax.rate === rate && tax.type === type) {
-            return tax.code
-        }
-    }
-    return undefined
-}
-
-function accountLookup(paymentType: string, parameters: any): Account {
-    const key = paymentTypeKey(paymentType)
-    const account = parameters.account_map.payments[key]
-    if (!_.isNil(account)) {
-        return account
-    }
-    const fallback = parameters.account_map.general.fallback
-    return {
-        description: fallback.description + " " + paymentType,
-        account: fallback.account
-    }
-}
-
-function accountDiffLookup(paymentType: string, comment: string, parameters: any): Account {
-    const key = paymentTypeKey(paymentType)
-    const account = parameters.account_map.diffs[key]
-    if (!_.isNil(account)) {
-        return {
-            account: account.account,
-            description: account.description + ": " + comment
-        }
-    }
-    const fallback = parameters.account_map.general.fallback
-    return {
-        description: fallback.description + ": " + comment + " " + paymentType,
-        account: fallback.account
-    }
-}
-
-function accountDepositLookup(paymentType: string, parameters: any): Account {
-    const key = paymentTypeKey(paymentType)
-    const account = parameters.account_map.deposits[key]
-    if (!_.isNil(account)) {
-        return account
-    }
-    const fallback = parameters.account_map.general.fallback
-    return {
-        description: fallback.description + " " + paymentType,
-        account: fallback.account
-    }
-}
-
 function sourceDescription(source: any): string {
     const shopName = source.shop_name
     const registerName = source.register_name
@@ -86,6 +35,57 @@ export class EconomicTransform {
     constructor(configuration: any, data: any) {
         this.data = data
         this.configuration = configuration
+    }
+
+    lookupVatCode(rate: number, type: string): string | undefined {
+        for (const tax of this.configuration.tax_codes) {
+            if (tax.rate === rate && tax.type === type) {
+                return tax.code
+            }
+        }
+        return undefined
+    }
+
+    accountLookup(paymentType: string): Account {
+        const key = paymentTypeKey(paymentType)
+        const account = this.configuration.account_map.payments[key]
+        if (!_.isNil(account)) {
+            return account
+        }
+        const fallback = this.configuration.account_map.general.fallback
+        return {
+            description: fallback.description + " " + paymentType,
+            account: fallback.account
+        }
+    }
+
+    accountDiffLookup(paymentType: string, comment: string): Account {
+        const key = paymentTypeKey(paymentType)
+        const account = this.configuration.account_map.diffs[key]
+        if (!_.isNil(account)) {
+            return {
+                account: account.account,
+                description: account.description + ": " + comment
+            }
+        }
+        const fallback = this.configuration.account_map.general.fallback
+        return {
+            description: fallback.description + ": " + comment + " " + paymentType,
+            account: fallback.account
+        }
+    }
+
+    accountDepositLookup(paymentType: string): Account {
+        const key = paymentTypeKey(paymentType)
+        const account = this.configuration.account_map.deposits[key]
+        if (!_.isNil(account)) {
+            return account
+        }
+        const fallback = this.configuration.account_map.general.fallback
+        return {
+            description: fallback.description + " " + paymentType,
+            account: fallback.account
+        }
     }
 
     saleExport(): string {
@@ -129,7 +129,7 @@ export class EconomicTransform {
 
         for (const key in taxTotals) {
             const totals = taxTotals[key]
-            const vatCode = lookupVatCode(totals.rate, totals.type, parameters)
+            const vatCode = this.lookupVatCode(totals.rate, totals.type)
             const voucher: any = {
                 text: saleAccount.description + sourceDesc,
                 amount: -totals.total,
@@ -147,7 +147,7 @@ export class EconomicTransform {
                 }
             }
             vouchers.push(voucher)
-    
+
         }
 
 
@@ -158,7 +158,7 @@ export class EconomicTransform {
                 amount = payment.foreign_currency_amount
                 currencyCode = payment.foreign_currency
             }
-            const account = accountLookup(payment.payment_type, parameters)
+            const account = this.accountLookup(payment.payment_type)
             const voucher: any = {
                 text: account.description + sourceDesc,
                 amount: amount,
@@ -210,8 +210,8 @@ export class EconomicTransform {
         if (!_.isNil(statement.register_summary.cash_diff_at_open)) {
             const diff = statement.register_summary.cash_diff_at_open
             const comment = statement.register_summary.cash_diff_comment_at_open
-            const paymentTypeAccount = accountLookup("cash", parameters)
-            const diffAccount = accountDiffLookup("cash", comment, parameters)
+            const paymentTypeAccount = this.accountLookup("cash")
+            const diffAccount = this.accountDiffLookup("cash", comment)
             vouchers.push({
                 text: diffAccount.description + sourceDesc,
                 amount: diff,
@@ -244,8 +244,8 @@ export class EconomicTransform {
                 if (diff !== 0) {
                     const comment = statement.comment || ""
                     const paymentType = reconciliation.payment_type_identifier
-                    const paymentTypeAccount = accountLookup(paymentType, parameters)
-                    const diffAccount = accountDiffLookup(paymentType, comment, parameters)
+                    const paymentTypeAccount = this.accountLookup(paymentType)
+                    const diffAccount = this.accountDiffLookup(paymentType, comment)
                     vouchers.push({
                         text: diffAccount.description + sourceDesc,
                         amount: diff,
@@ -273,8 +273,8 @@ export class EconomicTransform {
             if (!_.isNil(reconciliation.deposited_amount)) {
                 const deposited = reconciliation.deposited_amount
                 const paymentType = reconciliation.payment_type_identifier
-                const paymentTypeAccount = accountLookup(paymentType, parameters)
-                const depositAccount = accountDepositLookup(paymentType, parameters)
+                const paymentTypeAccount = this.accountLookup(paymentType)
+                const depositAccount = this.accountDepositLookup(paymentType)
                 vouchers.push({
                     text: depositAccount.description + sourceDesc,
                     amount: -deposited,
