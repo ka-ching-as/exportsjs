@@ -163,7 +163,7 @@ class EconomicTransform {
             vouchers.push(voucher);
         }
         journalEntry.entries = { financeVouchers: vouchers };
-        return JSON.stringify(journalEntry);
+        return journalEntry;
     }
     registerCloseStatementExport() {
         const statement = this.data;
@@ -277,7 +277,7 @@ class EconomicTransform {
             }
         }
         journalEntry.entries = { financeVouchers: vouchers };
-        return JSON.stringify(journalEntry);
+        return journalEntry;
     }
 }
 exports.EconomicTransform = EconomicTransform;
