@@ -107,15 +107,20 @@ export class EconomicTransform {
         const vouchers: any[] = []
         const saleAccount = parameters.account_map.general.sale
 
-        const sourceDesc = sourceDescription(sale.source)
+        const sourceDesc = sourceDescription(sale.source) + " sale id: " + sale.identifier
 
         const taxTotals: any = {}
 
         for (const lineItem of sale.summary.line_items) {
-            if (lineItem.taxes.length !== 1) {
-                throw new Error("All line items must have exactly one tax entry in order to map to e-conomic journal vouchers")
+            let taxes: any[] = lineItem.taxes
+            if (!taxes) {
+                taxes = [{ rate: 0, type: "vat" }]
             }
-            const tax = lineItem.taxes[0]
+            if (taxes.length !== 1) {
+                console.info("All line items must have exactly one tax entry in order to map to e-conomic journal vouchers", sale)
+                continue
+            }
+            const tax = taxes[0]
             const rate = tax.rate
             const type = tax.type
             const key = `${type}-${rate}`
@@ -147,9 +152,7 @@ export class EconomicTransform {
                 }
             }
             vouchers.push(voucher)
-
         }
-
 
         for (const payment of sale.payments) {
             let amount = payment.amount
@@ -181,7 +184,7 @@ export class EconomicTransform {
         }
         journalEntry.entries = { financeVouchers: vouchers }
 
-        return JSON.stringify(journalEntry)
+        return journalEntry
     }
 
     registerCloseStatementExport(): string {
@@ -205,7 +208,7 @@ export class EconomicTransform {
         journalEntry.accountingYear = { year: yearString }
         journalEntry.journal = { journalNumber: parameters.journal_number }
         const vouchers: any[] = []
-        const sourceDesc = sourceDescription(statement.source)
+        const sourceDesc = sourceDescription(statement.source) + " statement number: " + statement.sequence_number
 
         if (!_.isNil(statement.register_summary.cash_diff_at_open)) {
             const diff = statement.register_summary.cash_diff_at_open
@@ -301,6 +304,6 @@ export class EconomicTransform {
         }
         journalEntry.entries = { financeVouchers: vouchers }
 
-        return JSON.stringify(journalEntry)
+        return journalEntry
     }
 }
