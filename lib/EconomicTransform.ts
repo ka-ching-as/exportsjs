@@ -180,7 +180,7 @@ export class EconomicTransform {
         }
         journalEntry.entries = { financeVouchers: vouchers }
 
-        return JSON.stringify(journalEntry)
+        return journalEntry
     }
 
     registerCloseStatementExport(): string {
