@@ -99,8 +99,9 @@ class EconomicTransform {
         const sourceDesc = sourceDescription(sale.source);
         const taxTotals = {};
         for (const lineItem of sale.summary.line_items) {
-            if (lineItem.taxes.length !== 1) {
-                throw new Error("All line items must have exactly one tax entry in order to map to e-conomic journal vouchers");
+            if (!lineItem.taxes || lineItem.taxes.length !== 1) {
+                console.info("All line items must have exactly one tax entry in order to map to e-conomic journal vouchers", sale);
+                continue;
             }
             const tax = lineItem.taxes[0];
             const rate = tax.rate;
