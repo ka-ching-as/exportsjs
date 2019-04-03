@@ -93,7 +93,7 @@ class EconomicTransform {
         if (sale.voided) {
             throw new SkipExport("Voided sale");
         }
-        const isReturn = summary.is_retun || false;
+        const isReturn = summary.is_return || false;
         const dateString = sale.timing.timestamp_date_string;
         const comps = dateString.split("-");
         const date = `${comps[0]}-${comps[1]}-${comps[2]}`;
