@@ -10,6 +10,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _ = __importStar(require("lodash"));
 class SkipExport extends Error {
 }
+exports.SkipExport = SkipExport;
 function lookupYear(years, date) {
     for (const entry of years) {
         if (date >= entry.from_date && date <= entry.to_date) {

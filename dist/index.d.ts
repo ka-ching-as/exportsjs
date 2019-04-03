@@ -1,11 +1,12 @@
 import { CSVExport } from "./CSVExport";
 import { SimpleJSONTransform } from "./SimpleJSONTransform";
 import { MagentoKleanTransform } from "./MagentoKleanTransform";
-import { EconomicTransform } from "./EconomicTransform";
+import { EconomicTransform, SkipExport } from "./EconomicTransform";
 declare const _default: {
     csv: typeof CSVExport;
     simpleJSON: typeof SimpleJSONTransform;
     magentoKlean: typeof MagentoKleanTransform;
     economic: typeof EconomicTransform;
+    SkipExport: typeof SkipExport;
 };
 export default _default;

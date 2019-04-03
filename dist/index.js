@@ -8,5 +8,6 @@ exports.default = {
     csv: CSVExport_1.CSVExport,
     simpleJSON: SimpleJSONTransform_1.SimpleJSONTransform,
     magentoKlean: MagentoKleanTransform_1.MagentoKleanTransform,
-    economic: EconomicTransform_1.EconomicTransform
+    economic: EconomicTransform_1.EconomicTransform,
+    SkipExport: EconomicTransform_1.SkipExport
 };
