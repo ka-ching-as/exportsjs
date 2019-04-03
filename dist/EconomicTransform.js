@@ -8,6 +8,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = __importStar(require("lodash"));
+class SkipExport extends Error {
+}
 function lookupYear(years, date) {
     for (const entry of years) {
         if (date >= entry.from_date && date <= entry.to_date) {
@@ -87,6 +89,10 @@ class EconomicTransform {
         if (!summary) {
             throw new Error("Cannot find a sales summary");
         }
+        if (sale.voided) {
+            throw new SkipExport("Voided sale");
+        }
+        const isReturn = summary.is_retun || false;
         const dateString = sale.timing.timestamp_date_string;
         const comps = dateString.split("-");
         const date = `${comps[0]}-${comps[1]}-${comps[2]}`;
@@ -95,7 +101,7 @@ class EconomicTransform {
         journalEntry.accountingYear = { year: yearString };
         journalEntry.journal = { journalNumber: parameters.journal_number };
         const vouchers = [];
-        const saleAccount = parameters.account_map.general.sale;
+        const saleAccount = isReturn ? parameters.account_map.general.return : parameters.account_map.general.sale;
         const sourceDesc = sourceDescription(sale.source) + " sale id: " + sale.identifier;
         const taxTotals = {};
         for (const lineItem of sale.summary.line_items) {
@@ -140,6 +146,9 @@ class EconomicTransform {
             vouchers.push(voucher);
         }
         for (const payment of sale.payments) {
+            if (!payment.success) {
+                continue;
+            }
             let amount = payment.amount;
             let currencyCode = sale.base_currency_code;
             if (!_.isNil(payment.foreign_currency_amount)) {
