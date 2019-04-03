@@ -1,6 +1,6 @@
 import * as _ from "lodash"
 
-class SkipExport extends Error {}
+export class SkipExport extends Error {}
 
 interface Account {
     account: number,
