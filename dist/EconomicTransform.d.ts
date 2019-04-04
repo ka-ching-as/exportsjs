@@ -12,7 +12,7 @@ export declare class EconomicTransform {
     accountLookup(paymentType: string): Account;
     accountDiffLookup(paymentType: string, comment: string): Account;
     accountDepositLookup(paymentType: string): Account;
-    saleExport(): string;
-    registerCloseStatementExport(): string;
+    saleExport(): any;
+    registerCloseStatementExport(): any;
 }
 export {};

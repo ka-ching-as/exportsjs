@@ -90,7 +90,7 @@ export class EconomicTransform {
         }
     }
 
-    saleExport(): string {
+    saleExport(): any {
         const sale = this.data
         const parameters = this.configuration
         const summary = sale.summary
@@ -196,7 +196,7 @@ export class EconomicTransform {
         return journalEntry
     }
 
-    registerCloseStatementExport(): string {
+    registerCloseStatementExport(): any {
         const statement = this.data
         const parameters = this.configuration
 
