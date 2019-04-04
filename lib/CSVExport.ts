@@ -16,8 +16,8 @@ export class CSVExport {
     separator: string
     delimiter: string
 
-    constructor(configuration: any, elements: any) {
-        this.elements = elements
+    constructor(configuration: any, elementDict: any) {
+        this.elements = Object.values(elementDict)
         this.configuration = configuration
         this.itemType = configuration.configuration.item_type || 'sale'
 

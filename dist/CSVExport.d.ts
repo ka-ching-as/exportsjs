@@ -4,7 +4,7 @@ export declare class CSVExport {
     itemType: string;
     separator: string;
     delimiter: string;
-    constructor(configuration: any, elements: any);
+    constructor(configuration: any, elementDict: any);
     escape(value: string): string;
     formatNumber(value: string): string;
     outputHeaders(columns: any[]): string;
