@@ -17,7 +17,9 @@ export class CSVExport {
     delimiter: string
 
     constructor(configuration: any, elementDict: any) {
-        this.elements = Object.values(elementDict)
+        this.elements = Object.keys(elementDict).map(function(key) {
+            return elementDict[key]
+        })
         this.configuration = configuration
         this.itemType = configuration.configuration.item_type || 'sale'
 
