@@ -5,17 +5,15 @@ export declare class CSVExport {
     separator: string;
     delimiter: string;
     constructor(configuration: any, elementDict: any);
-    escape(value: string): string;
-    formatNumber(value: string): string;
-    outputHeaders(columns: any[]): string;
-    resolve(object: any, keypath: string): any;
-    parametrizeString(string: string, object: any): string;
-    evaluate(expression: string, object: any): string;
-    outputRows(row: any, columns: any, element: any): string[];
-    outputRowsForRegisterStatement(row: any, columns: any, statement: any): string[];
-    outputRowForRegisterStatement(row: any, columns: any, statement: any): string | null;
-    outputRowShared(row: any, columns: any, element: any, aggregates: any, overrides: any, count: number): string | null;
-    outputRowsForSale(row: any, columns: any, sale: any): string[];
-    outputRowForSale(row: any, columns: any, sale: any, filter?: any): string | null;
+    private escape;
+    private formatNumber;
+    private removeNewLines;
+    private outputHeaders;
+    private outputRows;
+    private outputRowsForRegisterStatement;
+    private outputRowForRegisterStatement;
+    private outputRowShared;
+    private outputRowsForSale;
+    private outputRowForSale;
     export(): string;
 }
