@@ -16,7 +16,9 @@ function localize(l10nString, language) {
 }
 class CSVExport {
     constructor(configuration, elementDict) {
-        this.elements = Object.values(elementDict);
+        this.elements = Object.keys(elementDict).map(function (key) {
+            return elementDict[key];
+        });
         this.configuration = configuration;
         this.itemType = configuration.configuration.item_type || 'sale';
         this.separator = configuration.configuration.csv_separator || ',';
