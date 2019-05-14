@@ -8,9 +8,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = __importStar(require("lodash"));
-class SkipExport extends Error {
-}
-exports.SkipExport = SkipExport;
+const SkipExport_1 = require("./SkipExport");
 function lookupYear(years, date) {
     for (const entry of years) {
         if (date >= entry.from_date && date <= entry.to_date) {
@@ -91,7 +89,7 @@ class EconomicTransform {
             throw new Error("Cannot find a sales summary");
         }
         if (sale.voided) {
-            throw new SkipExport("Voided sale");
+            throw new SkipExport_1.SkipExport("Voided sale");
         }
         const isReturn = summary.is_return || false;
         const dateString = sale.timing.timestamp_date_string;
