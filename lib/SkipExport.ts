@@ -1,0 +1,1 @@
+export class SkipExport extends Error {}
