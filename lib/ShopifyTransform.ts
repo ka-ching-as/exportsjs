@@ -32,19 +32,26 @@ export class ShopifyTransform {
         }
 
         // lookup inventory item id in shopify
+        const base64 = new Buffer(`${this.configuration.api_key}:${this.configuration.password}`).toString("base64")
+        const basicAuthValue = `Basic ${base64}`
+        const options: request.RequestPromiseOptions = {
+            headers: {
+                Authorization: basicAuthValue
+            }
+        }
         let inventoryItemId: string | undefined = undefined
         const variantId = this.data.variant_id
         if (!_.isNil(variantId)) {
-            const url = `https://${this.configuration.api_key}:${this.configuration.password}@${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`
-            const shopifyVariantResult = await request.get(url)
+            const url = `https://@${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`
+            const shopifyVariantResult = await request.get(url, options)
             if (shopifyVariantResult && 
                 shopifyVariantResult.variant && 
                 shopifyVariantResult.variant.inventory_item_id) {
                 inventoryItemId = `${shopifyVariantResult.variant.inventory_item_id}`
             }
         } else {
-            const url = `https://${this.configuration.api_key}:${this.configuration.password}@${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/products/${productId}.json`
-            const shopifyProductResult = await request.get(url)
+            const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/products/${productId}.json`
+            const shopifyProductResult = await request.get(url, options)
             if (shopifyProductResult && 
                 shopifyProductResult.product && 
                 shopifyProductResult.product.variants && 

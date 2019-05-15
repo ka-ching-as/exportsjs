@@ -40,11 +40,18 @@ class ShopifyTransform {
                 throw new Error("Missing product id");
             }
             // lookup inventory item id in shopify
+            const base64 = new Buffer(`${this.configuration.api_key}:${this.configuration.password}`).toString("base64");
+            const basicAuthValue = `Basic ${base64}`;
+            const options = {
+                headers: {
+                    Authorization: basicAuthValue
+                }
+            };
             let inventoryItemId = undefined;
             const variantId = this.data.variant_id;
             if (!_.isNil(variantId)) {
-                const url = `https://${this.configuration.api_key}:${this.configuration.password}@${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`;
-                const shopifyVariantResult = yield request.get(url);
+                const url = `https://@${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`;
+                const shopifyVariantResult = yield request.get(url, options);
                 if (shopifyVariantResult &&
                     shopifyVariantResult.variant &&
                     shopifyVariantResult.variant.inventory_item_id) {
@@ -52,8 +59,8 @@ class ShopifyTransform {
                 }
             }
             else {
-                const url = `https://${this.configuration.api_key}:${this.configuration.password}@${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/products/${productId}.json`;
-                const shopifyProductResult = yield request.get(url);
+                const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/products/${productId}.json`;
+                const shopifyProductResult = yield request.get(url, options);
                 if (shopifyProductResult &&
                     shopifyProductResult.product &&
                     shopifyProductResult.product.variants &&
