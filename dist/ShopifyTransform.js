@@ -7,16 +7,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const _ = __importStar(require("lodash"));
-const request = __importStar(require("request-promise"));
+const _ = require("lodash");
+const request = require("request-promise");
 class ShopifyTransform {
     constructor(configuration, data) {
         this.data = data;
@@ -24,9 +17,7 @@ class ShopifyTransform {
     }
     exportStockEvent() {
         return __awaiter(this, void 0, void 0, function* () {
-            // validate configuration
             this.validateStockConfiguration(this.configuration);
-            // find shopify location id
             if (_.isNil(this.data.stock_location_id)) {
                 throw new Error("Missing stock location id");
             }
@@ -34,12 +25,10 @@ class ShopifyTransform {
             if (_.isNil(locationId)) {
                 throw new Error(`Unknown stock location id ${this.data.stock_location_id} - couldn't resolve shopify location id`);
             }
-            // validate presence of product id
             const productId = this.data.product_id;
             if (_.isNil(productId)) {
                 throw new Error("Missing product id");
             }
-            // lookup inventory item id in shopify
             const base64 = new Buffer(`${this.configuration.api_key}:${this.configuration.password}`).toString("base64");
             const basicAuthValue = `Basic ${base64}`;
             const options = {
@@ -73,7 +62,6 @@ class ShopifyTransform {
             if (_.isNil(inventoryItemId)) {
                 throw new Error(`Failed to find inventory item id from product id ${productId} and variant id ${variantId}`);
             }
-            // build and return result
             const result = {
                 location_id: locationId,
                 inventory_item_id: Number(inventoryItemId),
@@ -108,3 +96,4 @@ class ShopifyTransform {
     }
 }
 exports.ShopifyTransform = ShopifyTransform;
+//# sourceMappingURL=ShopifyTransform.js.map

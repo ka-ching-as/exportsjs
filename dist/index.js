@@ -12,3 +12,4 @@ exports.default = {
     shopify: ShopifyTransform_1.ShopifyTransform,
     SkipExport: SkipExport_1.SkipExport
 };
+//# sourceMappingURL=index.js.map

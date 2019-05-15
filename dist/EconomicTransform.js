@@ -1,13 +1,6 @@
 "use strict";
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const _ = __importStar(require("lodash"));
+const _ = require("lodash");
 const SkipExport_1 = require("./SkipExport");
 function lookupYear(years, date) {
     for (const entry of years) {
@@ -169,7 +162,6 @@ class EconomicTransform {
             if (!_.isNil(payment.foreign_currency_amount)) {
                 voucher.baseCurrencyAmount = payment.amount;
                 const exchangeRate = payment.amount * 100 / amount;
-                // Exchange rate must be rounded to 6 decimals
                 voucher.exchangeRate = Math.round(exchangeRate * 1000000) / 1000000;
             }
             vouchers.push(voucher);
@@ -293,3 +285,4 @@ class EconomicTransform {
     }
 }
 exports.EconomicTransform = EconomicTransform;
+//# sourceMappingURL=EconomicTransform.js.map
