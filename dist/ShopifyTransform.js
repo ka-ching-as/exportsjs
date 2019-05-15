@@ -50,7 +50,7 @@ class ShopifyTransform {
             let inventoryItemId = undefined;
             const variantId = this.data.variant_id;
             if (!_.isNil(variantId)) {
-                const url = `https://@${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`;
+                const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`;
                 const shopifyVariantResult = yield request.get(url, options);
                 if (shopifyVariantResult &&
                     shopifyVariantResult.variant &&
