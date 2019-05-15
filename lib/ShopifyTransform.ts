@@ -37,7 +37,8 @@ export class ShopifyTransform {
         const options: request.RequestPromiseOptions = {
             headers: {
                 Authorization: basicAuthValue
-            }
+            },
+            json: true
         }
         let inventoryItemId: string | undefined = undefined
         const variantId = this.data.variant_id

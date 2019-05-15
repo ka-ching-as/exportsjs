@@ -45,7 +45,8 @@ class ShopifyTransform {
             const options = {
                 headers: {
                     Authorization: basicAuthValue
-                }
+                },
+                json: true
             };
             let inventoryItemId = undefined;
             const variantId = this.data.variant_id;
