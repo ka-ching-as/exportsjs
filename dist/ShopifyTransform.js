@@ -51,13 +51,12 @@ class ShopifyTransform {
             else {
                 const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/products/${productId}.json`;
                 const shopifyProductResult = yield request.get(url, options);
-                console.info(`Products result $${JSON.stringify(shopifyProductResult)}`);
                 if (shopifyProductResult &&
                     shopifyProductResult.product &&
                     shopifyProductResult.product.variants &&
                     shopifyProductResult.product.variants[0] &&
                     shopifyProductResult.product.variants[0].inventory_item_id) {
-                    inventoryItemId = `${shopifyProductResult.variant.inventory_item_id}`;
+                    inventoryItemId = `${shopifyProductResult.product.variants[0].inventory_item_id}`;
                 }
             }
             if (_.isNil(inventoryItemId)) {
