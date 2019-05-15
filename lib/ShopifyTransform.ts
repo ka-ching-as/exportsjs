@@ -43,7 +43,7 @@ export class ShopifyTransform {
         let inventoryItemId: string | undefined = undefined
         const variantId = this.data.variant_id
         if (!_.isNil(variantId)) {
-            const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`
+            const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`
             const shopifyVariantResult = await request.get(url, options)
             if (shopifyVariantResult && 
                 shopifyVariantResult.variant && 
@@ -51,7 +51,7 @@ export class ShopifyTransform {
                 inventoryItemId = `${shopifyVariantResult.variant.inventory_item_id}`
             }
         } else {
-            const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/products/${productId}.json`
+            const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/products/${productId}.json`
             const shopifyProductResult = await request.get(url, options)
             if (shopifyProductResult && 
                 shopifyProductResult.product && 
