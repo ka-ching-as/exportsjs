@@ -53,6 +53,7 @@ export class ShopifyTransform {
         } else {
             const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/2019-04/products/${productId}.json`
             const shopifyProductResult = await request.get(url, options)
+            console.info(`Products result $${JSON.stringify(shopifyProductResult)}`)
             if (shopifyProductResult && 
                 shopifyProductResult.product && 
                 shopifyProductResult.product.variants && 
