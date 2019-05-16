@@ -82,13 +82,18 @@ class ShopifyTransform {
             for (const lineItem of this.ecommerceLines(sale)) {
                 let variantId = lineItem.variant_id;
                 if (_.isNil(variantId)) {
-                    const shopifyProduct = yield this.shopifyProduct(lineItem.id, this.configuration);
-                    if (shopifyProduct &&
-                        shopifyProduct.product &&
-                        shopifyProduct.product.variants &&
-                        shopifyProduct.product.variants[0] &&
-                        shopifyProduct.product.variants[0].variant_id) {
-                        variantId = `${shopifyProduct.product.variants[0].variant_id}`;
+                    try {
+                        const shopifyProduct = yield this.shopifyProduct(lineItem.id, this.configuration);
+                        if (shopifyProduct &&
+                            shopifyProduct.product &&
+                            shopifyProduct.product.variants &&
+                            shopifyProduct.product.variants[0] &&
+                            shopifyProduct.product.variants[0].variant_id) {
+                            variantId = `${shopifyProduct.product.variants[0].variant_id}`;
+                        }
+                    }
+                    catch (error) {
+                        console.info(`Got error when trying to get variant with id ${lineItem.id} from Shopify: ${error.toString()}`);
                     }
                 }
                 if (!variantId) {
