@@ -23,6 +23,7 @@
     "lodash": "4.17.11",
     "moment": "2.22.2",
     "numeral": "2.0.6",
+    "parse-full-name": "1.2.3",
     "request": "2.88.0",
     "request-promise": "4.2.2"
   },
