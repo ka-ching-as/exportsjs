@@ -36,12 +36,19 @@ export class ShopifyTransform {
         // local sale var
         const sale = this.data
 
+        // look up location id
+        const locationId = this.configuration.location_id_map[sale.source.shop_id]
+        if (_.isNil(locationId)) {
+            throw new Error(`Unknown stock location id ${sale.source.shop_id} - couldn't resolve shopify location id`)
+        }
+
         // build shopify order
         const order: any = {
             currency: sale.base_currency_code,
             customer: {
                 id: Number(sale.customer.id)
-            }
+            },
+            location_id: Number(locationId)
         }
 
         // tax type - Shopify can only handle either vat type or sales tax type, not mixed. 
@@ -161,7 +168,7 @@ export class ShopifyTransform {
         
         // build and return result
         const result: any = {
-            location_id: locationId,
+            location_id: Number(locationId),
             inventory_item_id: Number(inventoryItemId),
         }
 

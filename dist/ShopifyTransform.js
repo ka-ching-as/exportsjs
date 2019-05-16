@@ -26,11 +26,16 @@ class ShopifyTransform {
             this.validateSalesConfiguration(this.configuration);
             this.validateSale(this.data);
             const sale = this.data;
+            const locationId = this.configuration.location_id_map[sale.source.shop_id];
+            if (_.isNil(locationId)) {
+                throw new Error(`Unknown stock location id ${sale.source.shop_id} - couldn't resolve shopify location id`);
+            }
             const order = {
                 currency: sale.base_currency_code,
                 customer: {
                     id: Number(sale.customer.id)
-                }
+                },
+                location_id: Number(locationId)
             };
             if (this.configuration.tax_type === TaxType.VAT) {
                 order.taxes_included = true;
@@ -124,7 +129,7 @@ class ShopifyTransform {
                 throw new Error(`Failed to find inventory item id from product id ${productId} and variant id ${this.data.variant_id}`);
             }
             const result = {
-                location_id: locationId,
+                location_id: Number(locationId),
                 inventory_item_id: Number(inventoryItemId),
             };
             const adjustment = this.data.adjustment;
