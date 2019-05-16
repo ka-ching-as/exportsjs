@@ -73,7 +73,7 @@ export class ShopifyTransform {
         const shipping = shippingLine.behavior.shipping
         const shippingAddress = shipping.address
         const shippingCustomerInfo = shipping.customer_info
-        const parsedName = parsefullname(shippingAddress.name)
+        const parsedName = parsefullname.parsefullname(shippingAddress.name)
         
         const shopifyShipping: any = {}
         shopifyShipping.first_name = parsedName.first || ""
