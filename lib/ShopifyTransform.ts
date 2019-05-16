@@ -189,20 +189,28 @@ export class ShopifyTransform {
         let inventoryItemId: string | undefined = undefined
         if (!_.isNil(variantId)) {
             const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`
-            const shopifyVariantResult = await request.get(url, this.shopifyRequestOptions(configuration))
-            if (shopifyVariantResult && 
-                shopifyVariantResult.variant && 
-                shopifyVariantResult.variant.inventory_item_id) {
-                inventoryItemId = `${shopifyVariantResult.variant.inventory_item_id}`
+            try {
+                const shopifyVariantResult = await request.get(url, this.shopifyRequestOptions(configuration))
+                if (shopifyVariantResult &&
+                    shopifyVariantResult.variant &&
+                    shopifyVariantResult.variant.inventory_item_id) {
+                    inventoryItemId = `${shopifyVariantResult.variant.inventory_item_id}`
+                }
+            } catch (error) {
+                console.info(`Got error when trying to get variant with id ${variantId} from Shopify: ${error.toString()}`)
             }
         } else {
-            const shopifyProductResult = await this.shopifyProduct(productId, configuration)
-            if (shopifyProductResult && 
-                shopifyProductResult.product && 
-                shopifyProductResult.product.variants && 
-                shopifyProductResult.product.variants[0] && 
-                shopifyProductResult.product.variants[0].inventory_item_id) {
-                inventoryItemId = `${shopifyProductResult.product.variants[0].inventory_item_id}`
+            try {
+                const shopifyProductResult = await this.shopifyProduct(productId, configuration)
+                if (shopifyProductResult &&
+                    shopifyProductResult.product &&
+                    shopifyProductResult.product.variants &&
+                    shopifyProductResult.product.variants[0] &&
+                    shopifyProductResult.product.variants[0].inventory_item_id) {
+                    inventoryItemId = `${shopifyProductResult.product.variants[0].inventory_item_id}`
+                }
+            } catch (error) {
+                console.info(`Got error when trying to get product with id ${productId} from Shopify: ${error.toString()}`)
             }
         }
         return inventoryItemId
