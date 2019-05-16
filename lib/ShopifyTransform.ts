@@ -1,6 +1,7 @@
 import * as _ from "lodash"
 import * as parsefullname from "parse-full-name"
 import * as request from "request-promise"
+import { SkipExport } from "./SkipExport";
 
 enum TaxType {
     VAT = "vat",
@@ -162,6 +163,11 @@ export class ShopifyTransform {
         const productId = this.data.product_id
         if (_.isNil(productId)) {
             throw new Error("Missing product id")
+        }
+
+        // Shopify ids are numbers so do an early check here and fail with SkipExport
+        if (_.isNaN(productId)) {
+            throw new SkipExport(`SkipExport - Non compatible Shopify id ${productId}`)
         }
 
         // lookup inventory item id in shopify

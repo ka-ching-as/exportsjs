@@ -11,6 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const parsefullname = require("parse-full-name");
 const request = require("request-promise");
+const SkipExport_1 = require("./SkipExport");
 var TaxType;
 (function (TaxType) {
     TaxType["VAT"] = "vat";
@@ -128,6 +129,9 @@ class ShopifyTransform {
             const productId = this.data.product_id;
             if (_.isNil(productId)) {
                 throw new Error("Missing product id");
+            }
+            if (_.isNaN(productId)) {
+                throw new SkipExport_1.SkipExport(`SkipExport - Non compatible Shopify id ${productId}`);
             }
             const inventoryItemId = yield this.inventoryItemId(productId, this.data.variant_id, this.configuration);
             if (_.isNil(inventoryItemId)) {
