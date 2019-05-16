@@ -47,7 +47,7 @@ export class ShopifyTransform {
         const order: any = {
             currency: sale.base_currency_code,
             customer: {
-                id: Number(sale.customer.id)
+                id: Number(sale.summary.customer.identifier)
             },
             location_id: Number(locationId)
         }
@@ -316,8 +316,8 @@ export class ShopifyTransform {
         }
 
         // ensure customer id
-        if (!sale.customer || !sale.customer.id || Number(sale.customer.id) === NaN) {
-            throw new Error(`Customer id invalid on sale. Customer: ${JSON.stringify(sale.customer)}`)
+        if (!sale.summary.customer || !sale.summary.customer.identifier || Number(sale.summary.customer.identifier) === NaN) {
+            throw new Error(`Customer id invalid on sale. Customer: ${JSON.stringify(sale.summary.customer)}`)
         }
 
         // ensure ecom lines

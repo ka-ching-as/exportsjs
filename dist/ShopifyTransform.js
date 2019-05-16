@@ -34,7 +34,7 @@ class ShopifyTransform {
             const order = {
                 currency: sale.base_currency_code,
                 customer: {
-                    id: Number(sale.customer.id)
+                    id: Number(sale.summary.customer.identifier)
                 },
                 location_id: Number(locationId)
             };
@@ -264,8 +264,8 @@ class ShopifyTransform {
         if (sale.voided || sale.summary.is_return) {
             throw new Error(`Sale is either voided ${sale.voided} or is return ${sale.is_return}`);
         }
-        if (!sale.customer || !sale.customer.id || Number(sale.customer.id) === NaN) {
-            throw new Error(`Customer id invalid on sale. Customer: ${JSON.stringify(sale.customer)}`);
+        if (!sale.summary.customer || !sale.summary.customer.identifier || Number(sale.summary.customer.identifier) === NaN) {
+            throw new Error(`Customer id invalid on sale. Customer: ${JSON.stringify(sale.summary.customer)}`);
         }
         const ecomLineItems = this.ecommerceLines(sale);
         if (ecomLineItems.length === 0) {
