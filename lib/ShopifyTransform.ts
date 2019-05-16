@@ -166,7 +166,7 @@ export class ShopifyTransform {
         }
 
         // Shopify ids are numbers so do an early check here and fail with SkipExport
-        if (_.isNaN(productId)) {
+        if (_.isNaN(Number(productId))) {
             throw new SkipExport(`SkipExport - Non compatible Shopify id ${productId}`)
         }
 

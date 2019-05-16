@@ -130,7 +130,7 @@ class ShopifyTransform {
             if (_.isNil(productId)) {
                 throw new Error("Missing product id");
             }
-            if (_.isNaN(productId)) {
+            if (_.isNaN(Number(productId))) {
                 throw new SkipExport_1.SkipExport(`SkipExport - Non compatible Shopify id ${productId}`);
             }
             const inventoryItemId = yield this.inventoryItemId(productId, this.data.variant_id, this.configuration);
