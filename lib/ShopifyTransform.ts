@@ -255,7 +255,10 @@ export class ShopifyTransform {
     }
 
     private ecommerceLines(sale: any): any[] {
-        return (sale.summary.line_items || []).filter((line: any)=> { return !_.isNil(line.ecom_id) })
+        return (sale.summary.line_items || []).filter((line: any)=> { 
+            const behavior = line.behavior || {}
+            return !_.isNil(line.ecom_id) && _.isNil(behavior.shipping)
+        })
     }
 
     private shippingLines(sale: any): any[] {

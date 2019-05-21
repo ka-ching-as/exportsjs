@@ -216,7 +216,10 @@ class ShopifyTransform {
         return result;
     }
     ecommerceLines(sale) {
-        return (sale.summary.line_items || []).filter((line) => { return !_.isNil(line.ecom_id); });
+        return (sale.summary.line_items || []).filter((line) => {
+            const behavior = line.behavior || {};
+            return !_.isNil(line.ecom_id) && _.isNil(behavior.shipping);
+        });
     }
     shippingLines(sale) {
         return (sale.summary.line_items || []).filter((line) => {
