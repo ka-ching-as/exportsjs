@@ -33,11 +33,9 @@ class ShopifyTransform {
             }
             const order = {
                 currency: sale.base_currency_code,
-                customer: {
-                    id: Number(sale.summary.customer.identifier)
-                },
                 location_id: Number(locationId)
             };
+            order.customer = { id: Number(sale.summary.customer.identifier) };
             if (this.configuration.tax_type === TaxType.VAT) {
                 order.taxes_included = true;
             }
@@ -54,7 +52,7 @@ class ShopifyTransform {
             const shipping = shippingLine.behavior.shipping;
             const shippingAddress = shipping.address;
             const shippingCustomerInfo = shipping.customer_info;
-            const parsedName = parsefullname.parsefullname(shippingAddress.name);
+            const parsedName = parsefullname.parseFullName(shippingAddress.name);
             const shopifyShipping = {};
             shopifyShipping.first_name = parsedName.first || "";
             shopifyShipping.last_name = parsedName.last || "";

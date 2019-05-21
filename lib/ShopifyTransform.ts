@@ -46,11 +46,11 @@ export class ShopifyTransform {
         // build shopify order
         const order: any = {
             currency: sale.base_currency_code,
-            customer: {
-                id: Number(sale.summary.customer.identifier)
-            },
             location_id: Number(locationId)
         }
+
+        // customer
+        order.customer = { id: Number(sale.summary.customer.identifier) }
 
         // tax type - Shopify can only handle either vat type or sales tax type, not mixed. 
         // The taxes_included field specifies whether taxes er included in sub total or not
@@ -73,7 +73,7 @@ export class ShopifyTransform {
         const shipping = shippingLine.behavior.shipping
         const shippingAddress = shipping.address
         const shippingCustomerInfo = shipping.customer_info
-        const parsedName = parsefullname.parsefullname(shippingAddress.name)
+        const parsedName = parsefullname.parseFullName(shippingAddress.name)
         
         const shopifyShipping: any = {}
         shopifyShipping.first_name = parsedName.first || ""
