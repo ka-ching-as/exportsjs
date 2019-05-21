@@ -35,7 +35,9 @@ class ShopifyTransform {
                 currency: sale.base_currency_code,
                 location_id: Number(locationId)
             };
-            order.customer = { id: Number(sale.summary.customer.identifier) };
+            if (sale.summary.customer && sale.summary.customer.identifier) {
+                order.customer = { id: Number(sale.summary.customer.identifier) };
+            }
             if (this.configuration.tax_type === TaxType.VAT) {
                 order.taxes_included = true;
             }

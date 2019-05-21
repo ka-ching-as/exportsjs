@@ -50,7 +50,9 @@ export class ShopifyTransform {
         }
 
         // customer
-        order.customer = { id: Number(sale.summary.customer.identifier) }
+        if (sale.summary.customer && sale.summary.customer.identifier) {
+            order.customer = { id: Number(sale.summary.customer.identifier) }
+        }
 
         // tax type - Shopify can only handle either vat type or sales tax type, not mixed. 
         // The taxes_included field specifies whether taxes er included in sub total or not
