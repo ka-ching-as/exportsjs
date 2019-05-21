@@ -320,11 +320,6 @@ export class ShopifyTransform {
             throw new Error(`Sale is either voided ${sale.voided} or is return ${sale.is_return}`)
         }
 
-        // ensure customer id
-        if (!sale.summary.customer || !sale.summary.customer.identifier || Number(sale.summary.customer.identifier) === NaN) {
-            throw new Error(`Customer id invalid on sale. Customer: ${JSON.stringify(sale.summary.customer)}`)
-        }
-
         // ensure ecom lines
         const ecomLineItems = this.ecommerceLines(sale)
         if (ecomLineItems.length === 0) {

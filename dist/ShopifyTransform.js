@@ -267,9 +267,6 @@ class ShopifyTransform {
         if (sale.voided || sale.summary.is_return) {
             throw new Error(`Sale is either voided ${sale.voided} or is return ${sale.is_return}`);
         }
-        if (!sale.summary.customer || !sale.summary.customer.identifier || Number(sale.summary.customer.identifier) === NaN) {
-            throw new Error(`Customer id invalid on sale. Customer: ${JSON.stringify(sale.summary.customer)}`);
-        }
         const ecomLineItems = this.ecommerceLines(sale);
         if (ecomLineItems.length === 0) {
             throw new Error(`No ecommerce line items on sale`);
