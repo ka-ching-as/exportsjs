@@ -101,7 +101,7 @@ export class ShopifyTransform {
             order.shipping_lines = [shopifyShippingLine]
         }
 
-        order.shipping = shopifyShipping
+        order.shipping_address = shopifyShipping
         order.email = shippingCustomerInfo.email
 
         // line items

@@ -77,7 +77,7 @@ class ShopifyTransform {
                 }
                 order.shipping_lines = [shopifyShippingLine];
             }
-            order.shipping = shopifyShipping;
+            order.shipping_address = shopifyShipping;
             order.email = shippingCustomerInfo.email;
             const shopifyLineItems = [];
             for (const lineItem of this.ecommerceLines(sale)) {
