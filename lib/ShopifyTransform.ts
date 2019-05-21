@@ -113,8 +113,8 @@ export class ShopifyTransform {
                         shopifyProduct.product && 
                         shopifyProduct.product.variants && 
                         shopifyProduct.product.variants[0] && 
-                        shopifyProduct.product.variants[0].variant_id) {
-                        variantId = `${shopifyProduct.product.variants[0].variant_id}`
+                        shopifyProduct.product.variants[0].id) {
+                        variantId = `${shopifyProduct.product.variants[0].id}`
                     }
                 } catch (error) {
                     console.info(`Got error when trying to get variant with id ${lineItem.id} from Shopify: ${error.toString()}`)
