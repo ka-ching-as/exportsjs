@@ -71,7 +71,7 @@ export class ShopifyTransform {
         }
 
         // shipping
-        const shippingLine = this.shippingLines(sale, this.configuration)[0]
+        const shippingLine = this.shippingLines(sale, this.configuration.ecomId)[0]
         const shipping = shippingLine.behavior.shipping
         const shippingAddress = shipping.address
         const shippingCustomerInfo = shipping.customer_info
@@ -94,7 +94,7 @@ export class ShopifyTransform {
                 price: shippingLine.total,
                 title: shipping.method_id // Required field. Don't have anything better to put here unfortunately...
             }
-            const taxes = this.shopifyTaxLines(shippingLine.takes)
+            const taxes = this.shopifyTaxLines(shippingLine.taxes)
             if (taxes.length > 0) {
                 shopifyShippingLine.tax_lines = taxes
             }
@@ -106,7 +106,7 @@ export class ShopifyTransform {
 
         // line items
         const shopifyLineItems: any[] = []
-        for (const lineItem of this.ecommerceLines(sale, this.configuration)) {
+        for (const lineItem of this.ecommerceLines(sale, this.configuration.ecomId)) {
             let variantId: string | undefined = lineItem.variant_id
             if (_.isNil(variantId)) {
                 try {
