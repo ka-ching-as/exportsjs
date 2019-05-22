@@ -50,7 +50,7 @@ class ShopifyTransform {
                         value: sale.comment
                     }];
             }
-            const shippingLine = this.shippingLines(sale, this.configuration.ecomId)[0];
+            const shippingLine = this.shippingLines(sale, this.configuration.ecom_id)[0];
             const shipping = shippingLine.behavior.shipping;
             const shippingAddress = shipping.address;
             const shippingCustomerInfo = shipping.customer_info;
