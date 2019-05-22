@@ -1,9 +1,6 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const numeral_1 = __importDefault(require("numeral"));
+const numeral = require("numeral");
 function localize(l10nString, language) {
     if (!l10nString) {
         return "";
@@ -124,11 +121,11 @@ class CSVExport {
                 const amountProperties = ["base_price", "retail_price", "sales_tax_amount", "sub_total", "total", "total_tax_amount", "vat_amount"];
                 const valueProperties = ["barcode", "id", "image_url", "quantity", "variant_id"];
                 const localizedProperties = ["name", "variant_name"];
-                const discountAmount = numeral_1.default(0).add(lineItem["retail_price"] || 0).subtract(lineItem["sub_total"] || 0);
+                const discountAmount = numeral(0).add(lineItem["retail_price"] || 0).subtract(lineItem["sub_total"] || 0);
                 dataValues["discount_amount"] = `"${this.formatNumber(discountAmount.format('0.00'))}"`;
                 for (const property of amountProperties) {
                     if (lineItem[property] !== null && lineItem[property] !== undefined) {
-                        const amount = numeral_1.default(0).add(lineItem[property]);
+                        const amount = numeral(0).add(lineItem[property]);
                         const formatted = this.formatNumber(amount.format('0.00'));
                         dataValues[property] = `"${formatted}"`;
                     }
@@ -155,7 +152,10 @@ class CSVExport {
                         dataValues[property] = `"${sale.source[property]}"`;
                     }
                 }
-                outputRows.push(this.outputRowShared(row, columns, sale, this.removeNewLines(dataValues), 1));
+                const o = this.outputRowShared(row, columns, sale, this.removeNewLines(dataValues), 1);
+                if (o) {
+                    outputRows.push(o);
+                }
             }
             return outputRows.join("\n");
         }
@@ -175,3 +175,4 @@ class CSVExport {
     }
 }
 exports.CSVExport = CSVExport;
+//# sourceMappingURL=CSVExport.js.map

@@ -1,4 +1,4 @@
-import numeral from "numeral"
+import * as numeral from "numeral"
 
 function localize(l10nString: any, language: string) {
     if (!l10nString) { return "" }
@@ -44,7 +44,7 @@ export class CSVExport {
     }
 
     private outputHeaders(columns: any[]): string {
-        let headers = []
+        let headers: string[] = []
         for (const column of columns) {
             headers.push(this.escape(column.header))
         }
@@ -99,7 +99,7 @@ export class CSVExport {
             }
         }
 
-        var rowOutput = []
+        var rowOutput: any[] = []
         for (let index in columns) {
             let column = columns[index]
             if (column.value) {
@@ -125,7 +125,7 @@ export class CSVExport {
         const dataValues: any = {}
         let count = 0
         if (row.type.id === "line_items_each") {
-            let outputRows = []
+            let outputRows: string[] = []
             for (let index in sale.summary.line_items) {
                 let lineItem = sale.summary.line_items[index]
                 const amountProperties = ["base_price", "retail_price", "sales_tax_amount", "sub_total", "total", "total_tax_amount", "vat_amount"]
@@ -166,7 +166,10 @@ export class CSVExport {
                         dataValues[property] = `"${sale.source[property]}"`
                     }
                 }
-                outputRows.push(this.outputRowShared(row, columns, sale, this.removeNewLines(dataValues), 1))
+                const o = this.outputRowShared(row, columns, sale, this.removeNewLines(dataValues), 1)
+                if (o) {
+                    outputRows.push(o)
+                }
             }
             return outputRows.join("\n")
         }

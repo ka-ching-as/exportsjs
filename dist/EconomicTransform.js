@@ -1,16 +1,7 @@
 "use strict";
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const _ = __importStar(require("lodash"));
-class SkipExport extends Error {
-}
-exports.SkipExport = SkipExport;
+const _ = require("lodash");
+const SkipExport_1 = require("./SkipExport");
 function lookupYear(years, date) {
     for (const entry of years) {
         if (date >= entry.from_date && date <= entry.to_date) {
@@ -91,7 +82,7 @@ class EconomicTransform {
             throw new Error("Cannot find a sales summary");
         }
         if (sale.voided) {
-            throw new SkipExport("Voided sale");
+            throw new SkipExport_1.SkipExport("Voided sale");
         }
         const isReturn = summary.is_return || false;
         const dateString = sale.timing.timestamp_date_string;
@@ -171,7 +162,6 @@ class EconomicTransform {
             if (!_.isNil(payment.foreign_currency_amount)) {
                 voucher.baseCurrencyAmount = payment.amount;
                 const exchangeRate = payment.amount * 100 / amount;
-                // Exchange rate must be rounded to 6 decimals
                 voucher.exchangeRate = Math.round(exchangeRate * 1000000) / 1000000;
             }
             vouchers.push(voucher);
@@ -295,3 +285,4 @@ class EconomicTransform {
     }
 }
 exports.EconomicTransform = EconomicTransform;
+//# sourceMappingURL=EconomicTransform.js.map

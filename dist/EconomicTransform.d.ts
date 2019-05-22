@@ -1,5 +1,3 @@
-export declare class SkipExport extends Error {
-}
 interface Account {
     account: number;
     description: string;

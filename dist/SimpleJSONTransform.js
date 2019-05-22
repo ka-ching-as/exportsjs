@@ -1,9 +1,6 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const numeral_1 = __importDefault(require("numeral"));
+const numeral = require("numeral");
 class SimpleJSONTransform {
     constructor(configuration, data) {
         this.data = data;
@@ -35,7 +32,7 @@ class SimpleJSONTransform {
             var path = components[0];
             var value = this.valueFromPath(path, object);
             if (value.constructor === Number) {
-                return numeral_1.default(value).format();
+                return numeral(value).format();
             }
             else {
                 return value;
@@ -44,3 +41,4 @@ class SimpleJSONTransform {
     }
 }
 exports.SimpleJSONTransform = SimpleJSONTransform;
+//# sourceMappingURL=SimpleJSONTransform.js.map
