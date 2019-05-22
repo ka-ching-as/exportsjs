@@ -80,7 +80,7 @@ class ShopifyTransform {
             order.shipping_address = shopifyShipping;
             order.email = shippingCustomerInfo.email;
             const shopifyLineItems = [];
-            for (const lineItem of this.ecommerceLines(sale, this.configuration.ecomId)) {
+            for (const lineItem of this.ecommerceLines(sale, this.configuration.ecom_id)) {
                 let variantId = lineItem.variant_id;
                 if (_.isNil(variantId)) {
                     try {

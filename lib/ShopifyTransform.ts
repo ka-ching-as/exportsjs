@@ -1,7 +1,7 @@
 import * as _ from "lodash"
 import * as parsefullname from "parse-full-name"
 import * as request from "request-promise"
-import { SkipExport } from "./SkipExport";
+import { SkipExport } from "./SkipExport"
 
 enum TaxType {
     VAT = "vat",
@@ -106,7 +106,7 @@ export class ShopifyTransform {
 
         // line items
         const shopifyLineItems: any[] = []
-        for (const lineItem of this.ecommerceLines(sale, this.configuration.ecomId)) {
+        for (const lineItem of this.ecommerceLines(sale, this.configuration.ecom_id)) {
             let variantId: string | undefined = lineItem.variant_id
             if (_.isNil(variantId)) {
                 try {
