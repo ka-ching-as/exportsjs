@@ -32,7 +32,7 @@ export class ShopifyTransform {
         this.validateSalesConfiguration(this.configuration)
         
         // validate sale
-        this.validateSale(this.data)
+        this.validateSale(this.data, this.configuration)
 
         // local sale var
         const sale = this.data
@@ -71,7 +71,7 @@ export class ShopifyTransform {
         }
 
         // shipping
-        const shippingLine = this.shippingLines(sale)[0]
+        const shippingLine = this.shippingLines(sale, this.configuration)[0]
         const shipping = shippingLine.behavior.shipping
         const shippingAddress = shipping.address
         const shippingCustomerInfo = shipping.customer_info
@@ -106,7 +106,7 @@ export class ShopifyTransform {
 
         // line items
         const shopifyLineItems: any[] = []
-        for (const lineItem of this.ecommerceLines(sale)) {
+        for (const lineItem of this.ecommerceLines(sale, this.configuration)) {
             let variantId: string | undefined = lineItem.variant_id
             if (_.isNil(variantId)) {
                 try {
@@ -256,17 +256,17 @@ export class ShopifyTransform {
         return result
     }
 
-    private ecommerceLines(sale: any): any[] {
+    private ecommerceLines(sale: any, ecomId: string): any[] {
         return (sale.summary.line_items || []).filter((line: any)=> { 
             const behavior = line.behavior || {}
-            return !_.isNil(line.ecom_id) && _.isNil(behavior.shipping)
+            return !_.isNil(line.ecom_id) && line.ecom_id === ecomId && _.isNil(behavior.shipping)
         })
     }
 
-    private shippingLines(sale: any): any[] {
+    private shippingLines(sale: any, ecomId: string): any[] {
         return (sale.summary.line_items || []).filter((line: any)=> { 
             const behavior = line.behavior || {}
-            return !_.isNil(behavior.shipping)
+            return !_.isNil(behavior.shipping) && !_.isNil(line.ecom_id) && line.ecom_id === ecomId
         })
     }
 
@@ -294,6 +294,10 @@ export class ShopifyTransform {
         if (_.isNil(configuration.location_id_map) || typeof(configuration.location_id_map) !== "object") {
             throw new Error("shopify location_id_map is missing from configuration")
         }
+
+        if (_.isNil(configuration.ecom_id) || typeof(configuration.ecom_id) !== "string") {
+            throw new Error("shopify ecom_id is missing from configuration")
+        }
     }
 
     private validateStockConfiguration(configuration: any) {
@@ -314,14 +318,14 @@ export class ShopifyTransform {
         }
     }
 
-    private validateSale(sale: any) {
+    private validateSale(sale: any, configuration: any) {
         // returns and voided are not handled here
         if (sale.voided || sale.summary.is_return) {
             throw new Error(`Sale is either voided ${sale.voided} or is return ${sale.is_return}`)
         }
 
         // ensure ecom lines
-        const ecomLineItems = this.ecommerceLines(sale)
+        const ecomLineItems = this.ecommerceLines(sale, configuration.ecom_id)
         if (ecomLineItems.length === 0) {
             throw new Error(`No ecommerce line items on sale`)
         }
@@ -331,7 +335,7 @@ export class ShopifyTransform {
         }
         
         // ensure exactly 1 shipping line
-        const shippingLines = this.shippingLines(sale)
+        const shippingLines = this.shippingLines(sale, configuration.ecom_id)
         if (shippingLines.length !== 1) {
             throw new Error(`Invalid number of shipping lines on sale ${shippingLines.length}`)
         }

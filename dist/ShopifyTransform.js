@@ -25,7 +25,7 @@ class ShopifyTransform {
     exportSale() {
         return __awaiter(this, void 0, void 0, function* () {
             this.validateSalesConfiguration(this.configuration);
-            this.validateSale(this.data);
+            this.validateSale(this.data, this.configuration);
             const sale = this.data;
             const locationId = this.configuration.location_id_map[sale.source.shop_id];
             if (_.isNil(locationId)) {
@@ -50,7 +50,7 @@ class ShopifyTransform {
                         value: sale.comment
                     }];
             }
-            const shippingLine = this.shippingLines(sale)[0];
+            const shippingLine = this.shippingLines(sale, this.configuration)[0];
             const shipping = shippingLine.behavior.shipping;
             const shippingAddress = shipping.address;
             const shippingCustomerInfo = shipping.customer_info;
@@ -80,7 +80,7 @@ class ShopifyTransform {
             order.shipping_address = shopifyShipping;
             order.email = shippingCustomerInfo.email;
             const shopifyLineItems = [];
-            for (const lineItem of this.ecommerceLines(sale)) {
+            for (const lineItem of this.ecommerceLines(sale, this.configuration)) {
                 let variantId = lineItem.variant_id;
                 if (_.isNil(variantId)) {
                     try {
@@ -217,16 +217,16 @@ class ShopifyTransform {
         });
         return result;
     }
-    ecommerceLines(sale) {
+    ecommerceLines(sale, ecomId) {
         return (sale.summary.line_items || []).filter((line) => {
             const behavior = line.behavior || {};
-            return !_.isNil(line.ecom_id) && _.isNil(behavior.shipping);
+            return !_.isNil(line.ecom_id) && line.ecom_id === ecomId && _.isNil(behavior.shipping);
         });
     }
-    shippingLines(sale) {
+    shippingLines(sale, ecomId) {
         return (sale.summary.line_items || []).filter((line) => {
             const behavior = line.behavior || {};
-            return !_.isNil(behavior.shipping);
+            return !_.isNil(behavior.shipping) && !_.isNil(line.ecom_id) && line.ecom_id === ecomId;
         });
     }
     validateSalesConfiguration(configuration) {
@@ -248,6 +248,9 @@ class ShopifyTransform {
         if (_.isNil(configuration.location_id_map) || typeof (configuration.location_id_map) !== "object") {
             throw new Error("shopify location_id_map is missing from configuration");
         }
+        if (_.isNil(configuration.ecom_id) || typeof (configuration.ecom_id) !== "string") {
+            throw new Error("shopify ecom_id is missing from configuration");
+        }
     }
     validateStockConfiguration(configuration) {
         if (_.isNil(configuration.api_key) || typeof (configuration.api_key) !== "string") {
@@ -263,11 +266,11 @@ class ShopifyTransform {
             throw new Error("shopify location_id_map is missing from configuration");
         }
     }
-    validateSale(sale) {
+    validateSale(sale, configuration) {
         if (sale.voided || sale.summary.is_return) {
             throw new Error(`Sale is either voided ${sale.voided} or is return ${sale.is_return}`);
         }
-        const ecomLineItems = this.ecommerceLines(sale);
+        const ecomLineItems = this.ecommerceLines(sale, configuration.ecom_id);
         if (ecomLineItems.length === 0) {
             throw new Error(`No ecommerce line items on sale`);
         }
@@ -275,7 +278,7 @@ class ShopifyTransform {
         if (ecomLineItemsWithoutProductId.length !== ecomLineItems.length) {
             throw new Error(`1 or more ecommerce lines are missing product id`);
         }
-        const shippingLines = this.shippingLines(sale);
+        const shippingLines = this.shippingLines(sale, configuration.ecom_id);
         if (shippingLines.length !== 1) {
             throw new Error(`Invalid number of shipping lines on sale ${shippingLines.length}`);
         }
