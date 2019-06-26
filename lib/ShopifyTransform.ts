@@ -83,9 +83,7 @@ export class ShopifyTransform {
         shopifyShipping.address1 = shippingAddress.street
         shopifyShipping.city = shippingAddress.city
         shopifyShipping.zip = shippingAddress.postal_code
-        if (shippingAddress.country_code) {
-            shopifyShipping.country_code = shippingAddress.country_code || this.configuration.default_country_code
-        }
+        shopifyShipping.country_code = shippingAddress.country_code || this.configuration.default_country_code
         shopifyShipping.phone = shippingCustomerInfo.phone
         
         if (shipping.method_id) {
