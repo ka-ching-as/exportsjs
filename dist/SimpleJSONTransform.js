@@ -18,7 +18,7 @@ class SimpleJSONTransform {
         return body;
     }
     valueFromPath(path, obj) {
-        return path.split('.').reduce((o, i) => { if (o) {
+        return path.split(".").reduce((o, i) => { if (o) {
             return o[i];
         }
         else {
@@ -27,10 +27,10 @@ class SimpleJSONTransform {
     }
     parametrizeString(string, object) {
         return string.replace(/({.*?})/g, j => {
-            var removedBraces = j.substr(1).slice(0, -1);
-            var components = removedBraces.split('|');
-            var path = components[0];
-            var value = this.valueFromPath(path, object);
+            const removedBraces = j.substr(1).slice(0, -1);
+            const components = removedBraces.split("|");
+            const path = components[0];
+            const value = this.valueFromPath(path, object);
             if (value.constructor === Number) {
                 return numeral(value).format();
             }

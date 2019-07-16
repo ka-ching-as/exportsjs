@@ -20,14 +20,14 @@ export class CSVExport {
             return elementDict[key]
         })
         this.configuration = configuration
-        this.itemType = configuration.configuration.item_type || 'sale'
+        this.itemType = configuration.configuration.item_type || "sale"
 
-        this.separator = configuration.configuration.csv_separator || ','
-        this.delimiter = configuration.configuration.decimal_separator || '.'
+        this.separator = configuration.configuration.csv_separator || ";"
+        this.delimiter = configuration.configuration.decimal_separator || ","
     }
 
     private escape(value: string): string {
-        return value.replace(new RegExp(this.separator, 'g'), "\\" + this.separator)
+        return value.replace(new RegExp(this.separator, "g"), "\\" + this.separator)
     }
 
     private formatNumber(value: string): string {
@@ -44,7 +44,7 @@ export class CSVExport {
     }
 
     private outputHeaders(columns: any[]): string {
-        let headers: string[] = []
+        const headers: string[] = []
         for (const column of columns) {
             headers.push(this.escape(column.header))
         }
@@ -62,7 +62,7 @@ export class CSVExport {
     }
 
     private outputRowsForRegisterStatement(row: any, columns: any, statement: any): string[] {
-        let output = this.outputRowForRegisterStatement(row, columns, statement)
+        const output = this.outputRowForRegisterStatement(row, columns, statement)
         if (output !== null) {
             return [output]
         } else {
@@ -72,13 +72,13 @@ export class CSVExport {
 
     private outputRowForRegisterStatement(row: any, columns: any, statement: any): string | null {
         const overrides: any = {}
-        var count = 0
+        const count = 0
         return this.outputRowShared(row, columns, statement, overrides, count)
     }
 
     private outputRowShared(row: any, columns: any, element: any, dataValues: any, count: number): string | null {
         if (count === 0) { return null }
-        let values: any = {}
+        const values: any = {}
         for (const key in row.values) {
             values[key] = row.values[key]
         }
@@ -87,10 +87,10 @@ export class CSVExport {
         }
 
         if (row.required_values) {
-            var requirementsMet = true
-            for (let index in row.required_values) {
-                let required = row.required_values[index]
-                if (typeof values[required] === 'undefined') {
+            let requirementsMet = true
+            for (const index in row.required_values) {
+                const required = row.required_values[index]
+                if (typeof values[required] === "undefined") {
                     requirementsMet = false
                 }
             }
@@ -99,11 +99,11 @@ export class CSVExport {
             }
         }
 
-        var rowOutput: any[] = []
-        for (let index in columns) {
-            let column = columns[index]
+        const rowOutput: any[] = []
+        for (const index in columns) {
+            const column = columns[index]
             if (column.value) {
-                let val = (typeof values[column.value] !== 'undefined') ? values[column.value] : ""
+                const val = (typeof values[column.value] !== "undefined") ? values[column.value] : ""
                 rowOutput.push(val)
             } else {
                 rowOutput.push("")
@@ -113,7 +113,7 @@ export class CSVExport {
     }
 
     private outputRowsForSale(row: any, columns: any, sale: any): string[] {
-        let output = this.outputRowForSale(row, columns, sale)
+        const output = this.outputRowForSale(row, columns, sale)
         if (output !== null) {
             return [output]
         } else {
@@ -123,22 +123,22 @@ export class CSVExport {
 
     private outputRowForSale(row: any, columns: any, sale: any, filter?: any): string | null {
         const dataValues: any = {}
-        let count = 0
+        const count = 0
         if (row.type.id === "line_items_each") {
-            let outputRows: string[] = []
-            for (let index in sale.summary.line_items) {
-                let lineItem = sale.summary.line_items[index]
+            const outputRows: string[] = []
+            for (const index in sale.summary.line_items) {
+                const lineItem = sale.summary.line_items[index]
                 const amountProperties = ["base_price", "retail_price", "sales_tax_amount", "sub_total", "total", "total_tax_amount", "vat_amount"]
                 const valueProperties = ["barcode", "id", "image_url", "quantity", "variant_id"]
                 const localizedProperties = ["name", "variant_name"]
 
-                const discountAmount = numeral(0).add(lineItem["retail_price"] || 0).subtract(lineItem["sub_total"] || 0);
-                dataValues["discount_amount"] = `"${this.formatNumber(discountAmount.format('0.00'))}"`
+                const discountAmount = numeral(0).add(lineItem["retail_price"] || 0).subtract(lineItem["sub_total"] || 0)
+                dataValues["discount_amount"] = `"${this.formatNumber(discountAmount.format("0.00"))}"`
 
                 for (const property of amountProperties) {
                     if (lineItem[property] !== null && lineItem[property] !== undefined) {
-                        const amount = numeral(0).add(lineItem[property]);
-                        const formatted = this.formatNumber(amount.format('0.00'))
+                        const amount = numeral(0).add(lineItem[property])
+                        const formatted = this.formatNumber(amount.format("0.00"))
                         dataValues[property] = `"${formatted}"`
                     }
                 }
@@ -166,7 +166,8 @@ export class CSVExport {
                         dataValues[property] = `"${sale.source[property]}"`
                     }
                 }
-                const o = this.outputRowShared(row, columns, sale, this.removeNewLines(dataValues), 1)
+                this.removeNewLines(dataValues)
+                const o = this.outputRowShared(row, columns, sale, dataValues, 1)
                 if (o) {
                     outputRows.push(o)
                 }

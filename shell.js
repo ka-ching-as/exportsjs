@@ -33,7 +33,7 @@ function watchForChanges() {
 }
 
 const modules = {
-    shopifyStock: "./dist/ShopifyTransform",
+    csvExport: "./dist/CSVExport"
 };
 
 const ctx = repl.start({
