@@ -1,3 +1,4 @@
+import * as _ from "lodash"
 import * as numeral from "numeral"
 
 function localize(l10nString: any, language: string) {
@@ -166,6 +167,11 @@ export class CSVExport {
                         dataValues[property] = `"${sale.source[property]}"`
                     }
                 }
+
+                if (!_.isNil(sale.summary.customer.identifier)) {
+                    dataValues["customer_id"] = sale.summary.customer.identifier
+                }
+
                 this.removeNewLines(dataValues)
                 const o = this.outputRowShared(row, columns, sale, dataValues, 1)
                 if (o) {
