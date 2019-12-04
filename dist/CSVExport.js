@@ -153,7 +153,7 @@ class CSVExport {
                         dataValues[property] = `"${sale.source[property]}"`;
                     }
                 }
-                if (!_.isNil(sale.summary.customer.identifier)) {
+                if (!_.isNil(sale.summary.customer) && !_.isNil(sale.summary.customer.identifier)) {
                     dataValues["customer_id"] = sale.summary.customer.identifier;
                 }
                 this.removeNewLines(dataValues);
