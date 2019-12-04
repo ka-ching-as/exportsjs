@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const _ = require("lodash");
 const numeral = require("numeral");
 function localize(l10nString, language) {
     if (!l10nString) {
@@ -151,6 +152,9 @@ class CSVExport {
                     if (sale.source[property] !== null) {
                         dataValues[property] = `"${sale.source[property]}"`;
                     }
+                }
+                if (!_.isNil(sale.summary.customer.identifier)) {
+                    dataValues["customer_id"] = sale.summary.customer.identifier;
                 }
                 this.removeNewLines(dataValues);
                 const o = this.outputRowShared(row, columns, sale, dataValues, 1);
