@@ -13,6 +13,9 @@ class Searchable {
         this.name = []
 
         this.addBarcodesFrom(product)
+        this.addDescriptionFrom(product, ["description", "short_description"])
+        this.addIdsFrom(product)
+        this.addNamesFrom(product)
     }
 
     addBarcodesFrom(product: any) {
@@ -28,12 +31,16 @@ class Searchable {
         }
     }
 
-    addDescriptionFrom(product: any) {
-        if (!_.isNil(product.description)) {
-            if (typeof product.description === "string") {
-                this.description.push(product.description)
-            } else if (typeof product.description === "object") {
-                Object.values(product.description).forEach((value: any) => {
+    addDescriptionFrom(product: any, descriptionKeys: string[]) {
+        for (const key of descriptionKeys) {
+            if (_.isNil(product[key])) {
+                continue
+            }
+
+            if (typeof product[key] === "string") {
+                this.description.push(product[key])
+            } else if (typeof product[key] === "object") {
+                Object.values(product[key]).forEach((value: any) => {
                     if (typeof value === "string") {
                         this.description.push(value)
                     }
@@ -133,13 +140,17 @@ class Source {
         if (_.isNil(source)) {
             throw new Error("Source is nil")
         }
-        if (_.isNil(source.account) || typeof this.account !== "string") {
+        if (_.isNil(source.account) || typeof source.account !== "string") {
             throw new Error(`source.account is invalid: ${source.account}`)
         }
-        if (!_.isNil(source.shop) && typeof this.shop !== "string") {
+        if (!_.isNil(source.shop) && typeof source.shop !== "string") {
             throw new Error(`source.shop is invalid: ${source.shop}`)
         }
+        if (!_.isNil(source.markets) && !Array.isArray(source.markets)) {
+            throw new Error(`source.markets is invalid: ${source.markets}`)
+        }
         this.account = source.account
+        this.markets = source.markets
         this.shop = source.shop
     }
 
@@ -159,14 +170,17 @@ class Source {
         const result: any = {
             account: this.account
         }
-        if (_.isNil(this.shop)) {
+        if (!_.isNil(this.markets)) {
+            result.markets = this.markets
+        }
+        if (!_.isNil(this.shop)) {
             result.shop = this.shop
         }
         return result
     }
 }
 
-class ElasticSearchProduct {
+export class ElasticSearchProduct {
     id: string
     raw: any
     searchable: Searchable
