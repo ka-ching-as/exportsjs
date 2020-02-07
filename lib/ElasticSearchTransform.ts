@@ -249,12 +249,21 @@ export class ElasticSearchTransform {
     // }
 
     constructor(configuration: any, data: any, source: any) {
+        if (_.isNil(this.data)) {
+            throw new Error("Data missing")
+        }
+        if (_.isNil(this.data.product)) {
+            throw new Error("Product missing")
+        }
+        if (_.isNil(this.data.source)) {
+            throw new Error("Source missing")
+        }
         this.configuration = configuration
         this.data = data
         this.source = source
     }
 
-    exportProduct(): any {    
+    exportProduct(): any {   
         const elastic = new  ElasticSearchProduct(this.data.product, this.source)
         elastic.validate()
         return elastic.toJSON()
