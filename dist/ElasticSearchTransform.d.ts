@@ -1,11 +1,9 @@
 declare class Searchable {
     barcode: string[];
-    description: string[];
     id: string[];
     name: string[];
     constructor(product: any);
     addBarcodesFrom(product: any): void;
-    addDescriptionFrom(product: any, descriptionKeys: string[]): void;
     addIdsFrom(product: any): void;
     addNamesFrom(product: any): void;
     validate(): void;

@@ -4,11 +4,9 @@ const _ = require("lodash");
 class Searchable {
     constructor(product) {
         this.barcode = [];
-        this.description = [];
         this.id = [];
         this.name = [];
         this.addBarcodesFrom(product);
-        this.addDescriptionFrom(product, ["description", "short_description"]);
         this.addIdsFrom(product);
         this.addNamesFrom(product);
     }
@@ -21,23 +19,6 @@ class Searchable {
                 if (!_.isNil(variant.barcode) && typeof variant.barcode === "string") {
                     this.barcode.push(variant.barcode);
                 }
-            }
-        }
-    }
-    addDescriptionFrom(product, descriptionKeys) {
-        for (const key of descriptionKeys) {
-            if (_.isNil(product[key])) {
-                continue;
-            }
-            if (typeof product[key] === "string") {
-                this.description.push(product[key]);
-            }
-            else if (typeof product[key] === "object") {
-                Object.values(product[key]).forEach((value) => {
-                    if (typeof value === "string") {
-                        this.description.push(value);
-                    }
-                });
             }
         }
     }
@@ -92,12 +73,6 @@ class Searchable {
         if (!Array.isArray(this.barcode)) {
             throw new Error("barcode not an array");
         }
-        if (_.isNil(this.description)) {
-            throw new Error("Missing description array");
-        }
-        if (!Array.isArray(this.description)) {
-            throw new Error("description not an array");
-        }
         if (_.isNil(this.id)) {
             throw new Error("Missing id array");
         }
@@ -114,7 +89,6 @@ class Searchable {
     toJSON() {
         return {
             barcode: this.barcode,
-            description: this.description,
             id: this.id,
             name: this.name
         };
