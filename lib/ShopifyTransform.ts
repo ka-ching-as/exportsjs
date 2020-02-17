@@ -198,7 +198,7 @@ export class ShopifyTransform {
     private async inventoryItemId(productId: string, variantId: string | undefined, configuration: any): Promise<string | undefined> {
         let inventoryItemId: string | undefined = undefined
         if (!_.isNil(variantId)) {
-            const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`
+            const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2020-01/variants/${variantId}.json`
             try {
                 const shopifyVariantResult = await request.get(url, this.shopifyRequestOptions(configuration))
                 if (shopifyVariantResult &&
@@ -227,12 +227,12 @@ export class ShopifyTransform {
     }
 
     private async shopifyProduct(productId: string, configuration: any): Promise<any> {
-        const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2019-04/products/${productId}.json`
+        const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2020-01/products/${productId}.json`
         return await request.get(url, this.shopifyRequestOptions(configuration))
     }
 
     private shopifyRequestOptions(configuration: any): request.RequestPromiseOptions {
-        const base64 = new Buffer(`${configuration.api_key}:${configuration.password}`).toString("base64")
+        const base64 = Buffer.from(`${configuration.api_key}:${configuration.password}`).toString("base64")
         const basicAuthValue = `Basic ${base64}`
         const options: request.RequestPromiseOptions = {
             headers: {
