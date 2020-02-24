@@ -31,7 +31,7 @@ export declare class ElasticSearchTransform {
     configuration: any;
     data: any;
     source: any;
-    constructor(configuration: any, data: any, source: any);
+    constructor(data: any, source: any);
     exportProduct(): any;
     static getDocumentId(payload: any): string | undefined;
 }

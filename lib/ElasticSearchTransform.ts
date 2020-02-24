@@ -220,7 +220,7 @@ export class ElasticSearchTransform {
     //     "shop": "shop"
     // }
 
-    constructor(configuration: any, data: any, source: any) {
+    constructor(data: any, source: any) {
         if (_.isNil(this.data)) {
             throw new Error("Data missing")
         }
@@ -230,7 +230,6 @@ export class ElasticSearchTransform {
         if (_.isNil(this.data.source)) {
             throw new Error("Source missing")
         }
-        this.configuration = configuration
         this.data = data
         this.source = source
     }
