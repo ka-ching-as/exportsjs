@@ -157,7 +157,7 @@ class ShopifyTransform {
         return __awaiter(this, void 0, void 0, function* () {
             let inventoryItemId = undefined;
             if (!_.isNil(variantId)) {
-                const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2019-04/variants/${variantId}.json`;
+                const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2020-01/variants/${variantId}.json`;
                 try {
                     const shopifyVariantResult = yield request.get(url, this.shopifyRequestOptions(configuration));
                     if (shopifyVariantResult &&
@@ -190,12 +190,12 @@ class ShopifyTransform {
     }
     shopifyProduct(productId, configuration) {
         return __awaiter(this, void 0, void 0, function* () {
-            const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2019-04/products/${productId}.json`;
+            const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2020-01/products/${productId}.json`;
             return yield request.get(url, this.shopifyRequestOptions(configuration));
         });
     }
     shopifyRequestOptions(configuration) {
-        const base64 = new Buffer(`${configuration.api_key}:${configuration.password}`).toString("base64");
+        const base64 = Buffer.from(`${configuration.api_key}:${configuration.password}`).toString("base64");
         const basicAuthValue = `Basic ${base64}`;
         const options = {
             headers: {
