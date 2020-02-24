@@ -200,7 +200,7 @@ class ElasticSearchTransform {
         elastic.validate();
         return elastic.toJSON();
     }
-    getDocumentId(payload) {
+    static getDocumentId(payload) {
         return payload.id;
     }
 }

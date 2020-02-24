@@ -241,7 +241,7 @@ export class ElasticSearchTransform {
         return elastic.toJSON()
     }
 
-    getDocumentId(payload: any): string | undefined {
+    static getDocumentId(payload: any): string | undefined {
         return payload.id
     }
 }

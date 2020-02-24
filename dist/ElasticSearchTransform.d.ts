@@ -33,6 +33,6 @@ export declare class ElasticSearchTransform {
     source: any;
     constructor(configuration: any, data: any, source: any);
     exportProduct(): any;
-    getDocumentId(payload: any): string | undefined;
+    static getDocumentId(payload: any): string | undefined;
 }
 export {};
