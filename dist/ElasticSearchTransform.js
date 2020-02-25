@@ -182,6 +182,8 @@ class ElasticSearchProduct {
 exports.ElasticSearchProduct = ElasticSearchProduct;
 class ElasticSearchTransform {
     constructor(data, source) {
+        this.data = data;
+        this.source = source;
         if (_.isNil(this.data)) {
             throw new Error("Data missing");
         }
@@ -191,8 +193,6 @@ class ElasticSearchTransform {
         if (_.isNil(this.data.source)) {
             throw new Error("Source missing");
         }
-        this.data = data;
-        this.source = source;
     }
     exportProduct() {
         const elastic = new ElasticSearchProduct(this.data.product, this.source);
