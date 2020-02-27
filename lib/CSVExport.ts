@@ -122,6 +122,21 @@ export class CSVExport {
         }
     }
 
+    private typeForSale(sale: any): string {
+        if (sale.voided || false) {
+            return "void"
+        } else if (!_.isNil(sale.summary.return_reference)) {
+            return "return"
+        } else if (!_.isNil(sale.summary.expense_reference)) {
+            return "expense"
+        } else {
+            // We also have sales from sales quotes and sales from external orders
+            // but these are still essentially sales, so in order to not mess with
+            // the expectations of the receiver, these are all represented as 'sale'
+            return "sale"
+        }
+    }
+
     private outputRowForSale(row: any, columns: any, sale: any, filter?: any): string | null {
         const dataValues: any = {}
         const count = 0
@@ -154,7 +169,7 @@ export class CSVExport {
                         dataValues[property] = `"${localize(lineItem[property], "da")}"`
                     }
                 }
-                const type = (sale.voided || false) ? "void" : ((sale.summary.is_return || false) ? "return" : "sale")
+                const type = this.typeForSale(sale)
                 dataValues["type"] = type
                 dataValues["sale_id"] = sale.identifier
                 dataValues["sequence_number"] = sale.sequence_number
