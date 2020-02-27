@@ -14,6 +14,7 @@ export declare class CSVExport {
     private outputRowForRegisterStatement;
     private outputRowShared;
     private outputRowsForSale;
+    private typeForSale;
     private outputRowForSale;
     export(): string;
 }
