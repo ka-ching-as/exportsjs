@@ -112,6 +112,20 @@ class CSVExport {
             return [];
         }
     }
+    typeForSale(sale) {
+        if (sale.voided || false) {
+            return "void";
+        }
+        else if (!_.isNil(sale.summary.return_reference)) {
+            return "return";
+        }
+        else if (!_.isNil(sale.summary.expense_reference)) {
+            return "expense";
+        }
+        else {
+            return "sale";
+        }
+    }
     outputRowForSale(row, columns, sale, filter) {
         const dataValues = {};
         const count = 0;
@@ -141,7 +155,7 @@ class CSVExport {
                         dataValues[property] = `"${localize(lineItem[property], "da")}"`;
                     }
                 }
-                const type = (sale.voided || false) ? "void" : ((sale.summary.is_return || false) ? "return" : "sale");
+                const type = this.typeForSale(sale);
                 dataValues["type"] = type;
                 dataValues["sale_id"] = sale.identifier;
                 dataValues["sequence_number"] = sale.sequence_number;
