@@ -230,7 +230,7 @@ export class ElasticSearchTransform {
         if (_.isNil(this.data.product)) {
             throw new Error("Product missing")
         }
-        if (_.isNil(this.data.source)) {
+        if (_.isNil(this.source)) {
             throw new Error("Source missing")
         }
     }
