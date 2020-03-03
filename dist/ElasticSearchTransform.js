@@ -141,12 +141,12 @@ class ElasticSearchProduct {
         this.raw = product;
         this.searchable = new Searchable(product);
         this.source = new Source(source);
-        this.id = this.createDocumentId(product, this.source);
+        this.id = ElasticSearchProduct.createDocumentId(product, this.source);
     }
-    createDocumentId(product, source) {
-        let result = this.source.account;
-        if (!_.isNil(this.source.shop)) {
-            result += `*${this.source.shop}`;
+    static createDocumentId(product, source) {
+        let result = source.account;
+        if (!_.isNil(source.shop)) {
+            result += `*${source.shop}`;
         }
         if (_.isNil(product.id) && typeof product.id !== "string") {
             throw new Error("Product missing id");
@@ -184,30 +184,34 @@ class ElasticSearchTransform {
     constructor(data, source) {
         this.data = data;
         this.source = source;
+        if (_.isNil(this.data)) {
+            throw new Error("Data missing");
+        }
+        if (_.isNil(this.source)) {
+            throw new Error("Source missing");
+        }
         if (this.data.event === "delete") {
             if (_.isNil(this.data.id)) {
                 throw new Error("id missing for delete event");
             }
         }
         else {
-            if (_.isNil(this.data)) {
-                throw new Error("Data missing");
-            }
             if (_.isNil(this.data.product)) {
-                throw new Error("Product missing");
-            }
-            if (_.isNil(this.source)) {
-                throw new Error("Source missing");
+                throw new Error(`Product missing for ${this.data.event} event`);
             }
         }
     }
     exportProduct() {
         if (this.data.event === "delete") {
-            return { id: this.data.id };
+            return {
+                id: ElasticSearchProduct.createDocumentId({ id: this.data.id }, this.source)
+            };
         }
-        const elastic = new ElasticSearchProduct(this.data.product, this.source);
-        elastic.validate();
-        return elastic.toJSON();
+        else {
+            const elastic = new ElasticSearchProduct(this.data.product, this.source);
+            elastic.validate();
+            return elastic.toJSON();
+        }
     }
     static getDocumentId(payload) {
         return payload.id;

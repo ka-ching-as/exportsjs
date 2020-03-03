@@ -23,7 +23,7 @@ export declare class ElasticSearchProduct {
     searchable: Searchable;
     source: Source;
     constructor(product: any, source: any);
-    createDocumentId(product: any, source: Source): string;
+    static createDocumentId(product: any, source: Source): string;
     validate(): void;
     toJSON(): any;
 }
