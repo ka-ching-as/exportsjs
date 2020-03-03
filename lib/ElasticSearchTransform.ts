@@ -244,12 +244,8 @@ export class ElasticSearchTransform {
 
     exportProduct(): any {
         if (this.data.event === "delete") {
-            console.log("data", this.data)
-            console.log("source", this.source)
-            const id = ElasticSearchProduct.createDocumentId({ id: this.data.id }, this.source)
-            console.log("id", id)
             return { 
-                id: id
+                id: ElasticSearchProduct.createDocumentId({ id: this.data.id }, this.source)
             }
         } else {
             const elastic = new ElasticSearchProduct(this.data.product, this.source)
