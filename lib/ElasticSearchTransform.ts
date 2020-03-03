@@ -224,19 +224,29 @@ export class ElasticSearchTransform {
         this.data = data
         this.source = source
 
-        if (_.isNil(this.data)) {
-            throw new Error("Data missing")
-        }
-        if (_.isNil(this.data.product)) {
-            throw new Error("Product missing")
-        }
-        if (_.isNil(this.source)) {
-            throw new Error("Source missing")
+        if (this.data.event === "delete") {
+            if (_.isNil(this.data.id)) {
+                throw new Error("id missing for delete event")
+            }
+        } else {
+            if (_.isNil(this.data)) {
+                throw new Error("Data missing")
+            }
+            if (_.isNil(this.data.product)) {
+                throw new Error("Product missing")
+            }
+            if (_.isNil(this.source)) {
+                throw new Error("Source missing")
+            }
         }
     }
 
-    exportProduct(): any {   
-        const elastic = new  ElasticSearchProduct(this.data.product, this.source)
+    exportProduct(): any {
+        if (this.data.event === "delete") {
+            return { id: this.data.id }
+        }
+        
+        const elastic = new ElasticSearchProduct(this.data.product, this.source)
         elastic.validate()
         return elastic.toJSON()
     }
