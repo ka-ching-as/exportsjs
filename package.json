@@ -20,7 +20,7 @@
   "homepage": "https://github.com/ka-ching-as/exportsjs#readme",
   "dependencies": {
     "blueimp-md5": "2.10.0",
-    "lodash": "4.17.15",
+    "lodash": "4.17.19",
     "moment": "2.24.0",
     "numeral": "2.0.6",
     "parse-full-name": "1.2.3",
