@@ -50,37 +50,46 @@ class ShopifyTransform {
                         value: sale.comment
                     }];
             }
-            const shippingLine = this.shippingLines(sale, this.configuration.ecom_id)[0];
-            const shipping = shippingLine.behavior.shipping;
-            const shippingAddress = shipping.address;
-            const shippingCustomerInfo = shipping.customer_info;
-            const parsedName = parsefullname.parseFullName(shippingAddress.name);
-            const shopifyShipping = {};
-            shopifyShipping.first_name = parsedName.first || "";
-            shopifyShipping.last_name = parsedName.last || "";
-            shopifyShipping.address1 = shippingAddress.street;
-            shopifyShipping.city = shippingAddress.city;
-            shopifyShipping.zip = shippingAddress.postal_code;
-            shopifyShipping.country_code = shippingAddress.country_code || this.configuration.default_country_code;
-            shopifyShipping.phone = shippingCustomerInfo.phone;
-            if (shipping.method_id) {
-                const shopifyShippingLine = {
-                    code: shipping.method_id,
-                    price: shippingLine.total,
-                    title: shipping.method_id
-                };
-                const taxes = this.shopifyTaxLines(shippingLine.taxes);
-                if (taxes.length > 0) {
-                    shopifyShippingLine.tax_lines = taxes;
+            if (this.configuration.shop_sales !== true) {
+                const shippingLine = this.shippingLines(sale, this.configuration.ecom_id)[0];
+                const shipping = shippingLine.behavior.shipping;
+                const shippingAddress = shipping.address;
+                const shippingCustomerInfo = shipping.customer_info;
+                const parsedName = parsefullname.parseFullName(shippingAddress.name);
+                const shopifyShipping = {};
+                shopifyShipping.first_name = parsedName.first || "";
+                shopifyShipping.last_name = parsedName.last || "";
+                shopifyShipping.address1 = shippingAddress.street;
+                shopifyShipping.city = shippingAddress.city;
+                shopifyShipping.zip = shippingAddress.postal_code;
+                shopifyShipping.country_code = shippingAddress.country_code || this.configuration.default_country_code;
+                shopifyShipping.phone = shippingCustomerInfo.phone;
+                if (shipping.method_id) {
+                    const shopifyShippingLine = {
+                        code: shipping.method_id,
+                        price: shippingLine.total,
+                        title: shipping.method_id
+                    };
+                    const taxes = this.shopifyTaxLines(shippingLine.taxes);
+                    if (taxes.length > 0) {
+                        shopifyShippingLine.tax_lines = taxes;
+                    }
+                    order.shipping_lines = [shopifyShippingLine];
                 }
-                order.shipping_lines = [shopifyShippingLine];
+                order.shipping_address = shopifyShipping;
+                order.email = shippingCustomerInfo.email;
             }
-            order.shipping_address = shopifyShipping;
-            order.email = shippingCustomerInfo.email;
-            order.fulfillment_status = "fulfilled";
-            order.buyer_accepts_marketing = true;
+            else {
+                order.fulfillment_status = "fulfilled";
+                order.fulfillments = [
+                    {
+                        "location_id": Number(locationId)
+                    }
+                ];
+            }
             const shopifyLineItems = [];
-            for (const lineItem of this.ecommerceLines(sale, this.configuration.ecom_id)) {
+            const lineItems = (this.configuration.shop_sales === true) ? this.nonEcommerceLines(sale) : this.ecommerceLines(sale, this.configuration.ecom_id);
+            for (const lineItem of lineItems) {
                 let variantId = lineItem.variant_id;
                 if (_.isNil(variantId)) {
                     try {
@@ -105,7 +114,7 @@ class ShopifyTransform {
                     quantity: lineItem.quantity,
                     variant_id: Number(variantId)
                 };
-                const taxes = this.shopifyTaxLines(shopifyLineItem.takes);
+                const taxes = this.shopifyTaxLines(lineItem.taxes);
                 if (taxes.length > 0) {
                     shopifyLineItem.tax_lines = taxes;
                 }
@@ -223,6 +232,11 @@ class ShopifyTransform {
             return !_.isNil(line.ecom_id) && line.ecom_id === ecomId && _.isNil(behavior.shipping);
         });
     }
+    nonEcommerceLines(sale) {
+        return (sale.summary.line_items || []).filter((line) => {
+            return _.isNil(line.ecom_id);
+        });
+    }
     shippingLines(sale, ecomId) {
         return (sale.summary.line_items || []).filter((line) => {
             const behavior = line.behavior || {};
@@ -267,20 +281,31 @@ class ShopifyTransform {
         }
     }
     validateSale(sale, configuration) {
-        if (sale.voided || sale.summary.is_return) {
-            throw new Error(`Sale is either voided ${sale.voided} or is return ${sale.is_return}`);
+        if (configuration.shop_orders === true) {
+            if (sale.voided) {
+                throw new Error(`Sale is voided`);
+            }
+            const nonEcomLineItems = this.nonEcommerceLines(sale);
+            if (nonEcomLineItems.length === 0) {
+                throw new Error(`No non-ecommerce line items on sale`);
+            }
         }
-        const ecomLineItems = this.ecommerceLines(sale, configuration.ecom_id);
-        if (ecomLineItems.length === 0) {
-            throw new Error(`No ecommerce line items on sale`);
-        }
-        const ecomLineItemsWithoutProductId = ecomLineItems.filter((line) => { return !_.isNil(line.id); });
-        if (ecomLineItemsWithoutProductId.length !== ecomLineItems.length) {
-            throw new Error(`1 or more ecommerce lines are missing product id`);
-        }
-        const shippingLines = this.shippingLines(sale, configuration.ecom_id);
-        if (shippingLines.length !== 1) {
-            throw new Error(`Invalid number of shipping lines on sale ${shippingLines.length}`);
+        else {
+            if (sale.voided || sale.summary.is_return) {
+                throw new Error(`Sale is either voided ${sale.voided} or is return ${sale.is_return}`);
+            }
+            const ecomLineItems = this.ecommerceLines(sale, configuration.ecom_id);
+            if (ecomLineItems.length === 0) {
+                throw new Error(`No ecommerce line items on sale`);
+            }
+            const ecomLineItemsWithoutProductId = ecomLineItems.filter((line) => { return !_.isNil(line.id); });
+            if (ecomLineItemsWithoutProductId.length !== ecomLineItems.length) {
+                throw new Error(`1 or more ecommerce lines are missing product id`);
+            }
+            const shippingLines = this.shippingLines(sale, configuration.ecom_id);
+            if (shippingLines.length !== 1) {
+                throw new Error(`Invalid number of shipping lines on sale ${shippingLines.length}`);
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ export declare class ShopifyTransform {
     private shopifyRequestOptions;
     private shopifyTaxLines;
     private ecommerceLines;
+    private nonEcommerceLines;
     private shippingLines;
     private validateSalesConfiguration;
     private validateStockConfiguration;
