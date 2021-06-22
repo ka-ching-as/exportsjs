@@ -42,8 +42,8 @@ class ShopifyTransform {
                 };
                 const putUrl = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`;
                 const options = this.shopifyRequestOptions(this.configuration);
-                options.json = update;
-                yield request.put(url, options);
+                options.body = update;
+                yield request.put(putUrl, options);
                 throw new SkipExport_1.SkipExport("Customer is updated through a PUT request");
             }
             const customer = {

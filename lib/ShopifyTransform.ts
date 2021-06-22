@@ -43,8 +43,8 @@ export class ShopifyTransform {
             const putUrl = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`
 
             const options = this.shopifyRequestOptions(this.configuration)
-            options.json = update
-            await request.put(url, options)
+            options.body = update
+            await request.put(putUrl, options)
             throw new SkipExport("Customer is updated through a PUT request")
         }
 
@@ -150,8 +150,6 @@ export class ShopifyTransform {
                 }
             ]
         }
-
-        // TODO: order.buyer_accepts_marketing = true
 
         // line items
         const shopifyLineItems: any[] = []
