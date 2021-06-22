@@ -2,6 +2,7 @@ export declare class ShopifyTransform {
     data: any;
     configuration: any;
     constructor(configuration: any, data: any);
+    exportNewsletterSignup(): Promise<any>;
     exportSale(): Promise<any>;
     exportStockEvent(): Promise<any>;
     private inventoryItemId;

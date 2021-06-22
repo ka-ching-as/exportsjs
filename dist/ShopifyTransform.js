@@ -17,10 +17,43 @@ var TaxType;
     TaxType["VAT"] = "vat";
     TaxType["SALES_TAX"] = "sales_tax";
 })(TaxType || (TaxType = {}));
+const apiVersion = "2021-04";
 class ShopifyTransform {
     constructor(configuration, data) {
         this.data = data;
         this.configuration = configuration;
+    }
+    exportNewsletterSignup() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const signup = this.data;
+            const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/search.json?query=email:${signup.email}`;
+            const response = yield request.get(url, this.shopifyRequestOptions(this.configuration));
+            if (response.customers.length > 0) {
+                const existingCustomer = response.customers[0];
+                const customerId = existingCustomer.id;
+                if (existingCustomer.accepts_marketing === true) {
+                    throw new SkipExport_1.SkipExport("Customer is already signed up for email marketing");
+                }
+                const update = {
+                    customer: {
+                        id: customerId,
+                        accepts_marketing: true
+                    }
+                };
+                const putUrl = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`;
+                const options = this.shopifyRequestOptions(this.configuration);
+                options.json = update;
+                yield request.put(url, options);
+                throw new SkipExport_1.SkipExport("Customer is updated through a PUT request");
+            }
+            const customer = {
+                email: signup.email,
+                first_name: "Test",
+                last_name: "Testsen",
+                accepts_marketing: true
+            };
+            return { customer: customer };
+        });
     }
     exportSale() {
         return __awaiter(this, void 0, void 0, function* () {
