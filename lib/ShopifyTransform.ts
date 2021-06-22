@@ -101,6 +101,8 @@ export class ShopifyTransform {
 
         order.shipping_address = shopifyShipping
         order.email = shippingCustomerInfo.email
+        order.fulfillment_status = "fulfilled"
+        order.buyer_accepts_marketing = true
 
         // line items
         const shopifyLineItems: any[] = []

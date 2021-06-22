@@ -77,6 +77,8 @@ class ShopifyTransform {
             }
             order.shipping_address = shopifyShipping;
             order.email = shippingCustomerInfo.email;
+            order.fulfillment_status = "fulfilled";
+            order.buyer_accepts_marketing = true;
             const shopifyLineItems = [];
             for (const lineItem of this.ecommerceLines(sale, this.configuration.ecom_id)) {
                 let variantId = lineItem.variant_id;
