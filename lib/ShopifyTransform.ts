@@ -32,7 +32,7 @@ export class ShopifyTransform {
             const customerId = existingCustomer.id
             if (existingCustomer.accepts_marketing === true) {
                 // Customer is already signed up for email marketing
-                return undefined
+                throw new SkipExport("Customer is already signed up for email marketing")
             }
             const update = {
                 customer: {
@@ -45,7 +45,7 @@ export class ShopifyTransform {
             const options = this.shopifyRequestOptions(this.configuration)
             options.json = update
             await request.put(url, options)
-            return undefined
+            throw new SkipExport("Customer is updated through a PUT request")
         }
 
         const customer: any = {
