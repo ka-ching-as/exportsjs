@@ -8,6 +8,8 @@ enum TaxType {
     SALES_TAX = "sales_tax"
 }
 
+const apiVersion = "2021-04"
+
 export class ShopifyTransform {
 
     data: any
@@ -16,6 +18,43 @@ export class ShopifyTransform {
     constructor(configuration: any, data: any) {
         this.data = data
         this.configuration = configuration
+    }
+
+    async exportNewsletterSignup(): Promise<any> {
+
+        const signup = this.data
+
+        const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/search.json?query=email:${signup.email}`
+
+        const response = await request.get(url, this.shopifyRequestOptions(this.configuration))
+        if (response.customers.length > 0) {
+            const existingCustomer = response.customers[0]
+            const customerId = existingCustomer.id
+            if (existingCustomer.accepts_marketing === true) {
+                // Customer is already signed up for email marketing
+                return undefined
+            }
+            const update = {
+                customer: {
+                    id: customerId,
+                    accepts_marketing: true
+                }
+            }
+            const putUrl = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`
+
+            const options = this.shopifyRequestOptions(this.configuration)
+            options.json = update
+            await request.put(url, options)
+            return undefined
+        }
+
+        const customer: any = {
+            email: signup.email,
+            first_name: "Test",
+            last_name: "Testsen",
+            accepts_marketing: true
+        }
+        return { customer: customer }
     }
 
     // This method takes ecom line items and shipping information
