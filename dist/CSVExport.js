@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.CSVExport = void 0;
 const _ = require("lodash");
 const numeral = require("numeral");
 function localize(l10nString, language) {

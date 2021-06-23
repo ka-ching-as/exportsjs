@@ -22,11 +22,12 @@ export class ShopifyTransform {
 
     async exportNewsletterSignup(): Promise<any> {
 
+        this.validateNewsletterConfiguration()
         const signup = this.data
 
         const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/search.json?query=email:${signup.email}`
 
-        const response = await request.get(url, this.shopifyRequestOptions(this.configuration))
+        const response = await request.get(url, this.shopifyRequestOptions())
         if (response.customers.length > 0) {
             const existingCustomer = response.customers[0]
             const customerId = existingCustomer.id
@@ -42,7 +43,7 @@ export class ShopifyTransform {
             }
             const putUrl = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`
 
-            const options = this.shopifyRequestOptions(this.configuration)
+            const options = this.shopifyRequestOptions()
             options.body = update
             await request.put(putUrl, options)
             throw new SkipExport("Customer is updated through a PUT request")
@@ -50,8 +51,8 @@ export class ShopifyTransform {
 
         const customer: any = {
             email: signup.email,
-            first_name: "Test",
-            last_name: "Testsen",
+            first_name: signup.first_name ?? "-",
+            last_name: signup.last_name ?? "-",
             accepts_marketing: true
         }
         return { customer: customer }
@@ -68,10 +69,10 @@ export class ShopifyTransform {
     // https://help.shopify.com/en/api/reference/orders/order
     async exportSale(): Promise<any> {
         // validate configuration
-        this.validateSalesConfiguration(this.configuration)
+        this.validateSalesConfiguration()
 
         // validate sale
-        this.validateSale(this.data, this.configuration)
+        this.validateSale(this.data)
 
         // local sale var
         const sale = this.data
@@ -90,7 +91,21 @@ export class ShopifyTransform {
 
         // customer
         if (sale.summary.customer && sale.summary.customer.identifier) {
-            order.customer = { id: Number(sale.summary.customer.identifier) }
+            const customerId = Number(sale.summary.customer.identifier)
+            order.customer = { id: customerId }
+
+            // It appears that 'accepts_marketing' is cleared when an order
+            // without buyer_accepts_marketing is added.
+            // A workaround is to lookup the customer and set the flag
+            // based on what is found on the customer
+
+            const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`
+            try {
+                const customerResult = await request.get(url, this.shopifyRequestOptions())
+                order.buyer_accepts_marketing = customerResult.customer?.accepts_marketing
+            } catch(error) {
+                console.warn(`Failed looking up customer: ${error}`)
+            }
         }
 
         // tax type - Shopify can only handle either vat type or sales tax type, not mixed. 
@@ -160,7 +175,7 @@ export class ShopifyTransform {
             let variantId: string | undefined = lineItem.variant_id
             if (_.isNil(variantId)) {
                 try {
-                    const shopifyProduct = await this.shopifyProduct(lineItem.id, this.configuration)
+                    const shopifyProduct = await this.shopifyProduct(lineItem.id)
                     if (shopifyProduct &&
                         shopifyProduct.product &&
                         shopifyProduct.product.variants &&
@@ -191,6 +206,8 @@ export class ShopifyTransform {
         }
         order.line_items = shopifyLineItems
 
+        order.tags = "ka-ching"
+
         // transactions
         order.financial_status = "paid"
 
@@ -199,7 +216,7 @@ export class ShopifyTransform {
 
     async exportStockEvent(): Promise<any> {
         // validate configuration
-        this.validateStockConfiguration(this.configuration)
+        this.validateStockConfiguration()
 
         // find shopify location id
         if (_.isNil(this.data.stock_location_id)) {
@@ -223,7 +240,7 @@ export class ShopifyTransform {
         }
 
         // lookup inventory item id in shopify
-        const inventoryItemId = await this.inventoryItemId(productId, this.data.variant_id, this.configuration)
+        const inventoryItemId = await this.inventoryItemId(productId, this.data.variant_id)
         if (_.isNil(inventoryItemId)) {
             throw new Error(`Failed to find inventory item id from product id ${productId} and variant id ${this.data.variant_id}`)
         }
@@ -247,12 +264,13 @@ export class ShopifyTransform {
         return result
     }
 
-    private async inventoryItemId(productId: string, variantId: string | undefined, configuration: any): Promise<string | undefined> {
+    private async inventoryItemId(productId: string, variantId: string | undefined): Promise<string | undefined> {
         let inventoryItemId: string | undefined = undefined
+        const configuration = this.configuration
         if (!_.isNil(variantId)) {
-            const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2020-01/variants/${variantId}.json`
+            const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/variants/${variantId}.json`
             try {
-                const shopifyVariantResult = await request.get(url, this.shopifyRequestOptions(configuration))
+                const shopifyVariantResult = await request.get(url, this.shopifyRequestOptions())
                 if (shopifyVariantResult &&
                     shopifyVariantResult.variant &&
                     shopifyVariantResult.variant.inventory_item_id) {
@@ -263,7 +281,7 @@ export class ShopifyTransform {
             }
         } else {
             try {
-                const shopifyProductResult = await this.shopifyProduct(productId, configuration)
+                const shopifyProductResult = await this.shopifyProduct(productId)
                 if (shopifyProductResult &&
                     shopifyProductResult.product &&
                     shopifyProductResult.product.variants &&
@@ -278,13 +296,13 @@ export class ShopifyTransform {
         return inventoryItemId
     }
 
-    private async shopifyProduct(productId: string, configuration: any): Promise<any> {
-        const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2020-01/products/${productId}.json`
-        return await request.get(url, this.shopifyRequestOptions(configuration))
+    private async shopifyProduct(productId: string): Promise<any> {
+        const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/products/${productId}.json`
+        return await request.get(url, this.shopifyRequestOptions())
     }
 
-    private shopifyRequestOptions(configuration: any): request.RequestPromiseOptions {
-        const base64 = Buffer.from(`${configuration.api_key}:${configuration.password}`).toString("base64")
+    private shopifyRequestOptions(): request.RequestPromiseOptions {
+        const base64 = Buffer.from(`${this.configuration.api_key}:${this.configuration.password}`).toString("base64")
         const basicAuthValue = `Basic ${base64}`
         const options: request.RequestPromiseOptions = {
             headers: {
@@ -326,7 +344,23 @@ export class ShopifyTransform {
         })
     }
 
-    private validateSalesConfiguration(configuration: any) {
+    private validateNewsletterConfiguration() {
+        const configuration = this.configuration
+        if (_.isNil(configuration.api_key) || typeof (configuration.api_key) !== "string") {
+            throw new Error("shopify api key is missing from configuration")
+        }
+
+        if (_.isNil(configuration.password) || typeof (configuration.password) !== "string") {
+            throw new Error("shopify password is missing from configuration")
+        }
+
+        if (_.isNil(configuration.shopify_id) || typeof (configuration.shopify_id) !== "string") {
+            throw new Error("shopify shop id is missing from configuration")
+        }
+    }
+
+    private validateSalesConfiguration() {
+        const configuration = this.configuration
         if (_.isNil(configuration.api_key) || typeof (configuration.api_key) !== "string") {
             throw new Error("shopify api key is missing from configuration")
         }
@@ -356,7 +390,8 @@ export class ShopifyTransform {
         }
     }
 
-    private validateStockConfiguration(configuration: any) {
+    private validateStockConfiguration() {
+        const configuration = this.configuration
         if (_.isNil(configuration.api_key) || typeof (configuration.api_key) !== "string") {
             throw new Error("shopify api key is missing from configuration")
         }
@@ -374,8 +409,8 @@ export class ShopifyTransform {
         }
     }
 
-    private validateSale(sale: any, configuration: any) {
-        if (configuration.shop_orders === true) {
+    private validateSale(sale: any) {
+        if (this.configuration.shop_orders === true) {
             // Shop orders
             if (sale.voided) {
                 throw new Error(`Sale is voided`)
@@ -395,7 +430,7 @@ export class ShopifyTransform {
             }
 
             // ensure ecom lines
-            const ecomLineItems = this.ecommerceLines(sale, configuration.ecom_id)
+            const ecomLineItems = this.ecommerceLines(sale, this.configuration.ecom_id)
             if (ecomLineItems.length === 0) {
                 throw new Error(`No ecommerce line items on sale`)
             }
@@ -405,7 +440,7 @@ export class ShopifyTransform {
             }
 
             // ensure exactly 1 shipping line
-            const shippingLines = this.shippingLines(sale, configuration.ecom_id)
+            const shippingLines = this.shippingLines(sale, this.configuration.ecom_id)
             if (shippingLines.length !== 1) {
                 throw new Error(`Invalid number of shipping lines on sale ${shippingLines.length}`)
             }

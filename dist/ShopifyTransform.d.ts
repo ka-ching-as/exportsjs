@@ -12,6 +12,7 @@ export declare class ShopifyTransform {
     private ecommerceLines;
     private nonEcommerceLines;
     private shippingLines;
+    private validateNewsletterConfiguration;
     private validateSalesConfiguration;
     private validateStockConfiguration;
     private validateSale;

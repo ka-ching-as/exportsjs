@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ElasticSearchTransform = exports.ElasticSearchProduct = void 0;
 const _ = require("lodash");
 class Searchable {
     constructor(product) {
