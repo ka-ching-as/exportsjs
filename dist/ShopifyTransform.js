@@ -60,7 +60,7 @@ class ShopifyTransform {
         });
     }
     exportSale() {
-        var _a;
+        var _a, _b, _c;
         return __awaiter(this, void 0, void 0, function* () {
             this.validateSalesConfiguration();
             this.validateSale(this.data);
@@ -141,11 +141,7 @@ class ShopifyTransform {
                 if (_.isNil(variantId)) {
                     try {
                         const shopifyProduct = yield this.shopifyProduct(lineItem.id);
-                        if (shopifyProduct &&
-                            shopifyProduct.product &&
-                            shopifyProduct.product.variants &&
-                            shopifyProduct.product.variants[0] &&
-                            shopifyProduct.product.variants[0].id) {
+                        if ((_c = (_b = shopifyProduct === null || shopifyProduct === void 0 ? void 0 : shopifyProduct.product) === null || _b === void 0 ? void 0 : _b.variants[0]) === null || _c === void 0 ? void 0 : _c.id) {
                             variantId = `${shopifyProduct.product.variants[0].id}`;
                         }
                     }
@@ -213,6 +209,7 @@ class ShopifyTransform {
         });
     }
     inventoryItemId(productId, variantId) {
+        var _a, _b, _c;
         return __awaiter(this, void 0, void 0, function* () {
             let inventoryItemId = undefined;
             const configuration = this.configuration;
@@ -220,9 +217,7 @@ class ShopifyTransform {
                 const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/variants/${variantId}.json`;
                 try {
                     const shopifyVariantResult = yield request.get(url, this.shopifyRequestOptions());
-                    if (shopifyVariantResult &&
-                        shopifyVariantResult.variant &&
-                        shopifyVariantResult.variant.inventory_item_id) {
+                    if ((_a = shopifyVariantResult === null || shopifyVariantResult === void 0 ? void 0 : shopifyVariantResult.variant) === null || _a === void 0 ? void 0 : _a.inventory_item_id) {
                         inventoryItemId = `${shopifyVariantResult.variant.inventory_item_id}`;
                     }
                 }
@@ -233,11 +228,7 @@ class ShopifyTransform {
             else {
                 try {
                     const shopifyProductResult = yield this.shopifyProduct(productId);
-                    if (shopifyProductResult &&
-                        shopifyProductResult.product &&
-                        shopifyProductResult.product.variants &&
-                        shopifyProductResult.product.variants[0] &&
-                        shopifyProductResult.product.variants[0].inventory_item_id) {
+                    if ((_c = (_b = shopifyProductResult === null || shopifyProductResult === void 0 ? void 0 : shopifyProductResult.product) === null || _b === void 0 ? void 0 : _b.variants[0]) === null || _c === void 0 ? void 0 : _c.inventory_item_id) {
                         inventoryItemId = `${shopifyProductResult.product.variants[0].inventory_item_id}`;
                     }
                 }

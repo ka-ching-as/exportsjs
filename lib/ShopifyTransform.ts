@@ -176,11 +176,7 @@ export class ShopifyTransform {
             if (_.isNil(variantId)) {
                 try {
                     const shopifyProduct = await this.shopifyProduct(lineItem.id)
-                    if (shopifyProduct &&
-                        shopifyProduct.product &&
-                        shopifyProduct.product.variants &&
-                        shopifyProduct.product.variants[0] &&
-                        shopifyProduct.product.variants[0].id) {
+                    if (shopifyProduct?.product?.variants[0]?.id) {
                         variantId = `${shopifyProduct.product.variants[0].id}`
                     }
                 } catch (error) {
@@ -271,9 +267,7 @@ export class ShopifyTransform {
             const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/variants/${variantId}.json`
             try {
                 const shopifyVariantResult = await request.get(url, this.shopifyRequestOptions())
-                if (shopifyVariantResult &&
-                    shopifyVariantResult.variant &&
-                    shopifyVariantResult.variant.inventory_item_id) {
+                if (shopifyVariantResult?.variant?.inventory_item_id) {
                     inventoryItemId = `${shopifyVariantResult.variant.inventory_item_id}`
                 }
             } catch (error) {
@@ -282,11 +276,7 @@ export class ShopifyTransform {
         } else {
             try {
                 const shopifyProductResult = await this.shopifyProduct(productId)
-                if (shopifyProductResult &&
-                    shopifyProductResult.product &&
-                    shopifyProductResult.product.variants &&
-                    shopifyProductResult.product.variants[0] &&
-                    shopifyProductResult.product.variants[0].inventory_item_id) {
+                if (shopifyProductResult?.product?.variants[0]?.inventory_item_id) {
                     inventoryItemId = `${shopifyProductResult.product.variants[0].inventory_item_id}`
                 }
             } catch (error) {
