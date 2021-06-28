@@ -1,13 +1,15 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ShopifyTransform = void 0;
 const _ = require("lodash");
 const parsefullname = require("parse-full-name");
 const request = require("request-promise");
@@ -17,15 +19,51 @@ var TaxType;
     TaxType["VAT"] = "vat";
     TaxType["SALES_TAX"] = "sales_tax";
 })(TaxType || (TaxType = {}));
+const apiVersion = "2021-04";
 class ShopifyTransform {
     constructor(configuration, data) {
         this.data = data;
         this.configuration = configuration;
     }
-    exportSale() {
+    exportNewsletterSignup() {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
-            this.validateSalesConfiguration(this.configuration);
-            this.validateSale(this.data, this.configuration);
+            this.validateNewsletterConfiguration();
+            const signup = this.data;
+            const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/search.json?query=email:${signup.email}`;
+            const response = yield request.get(url, this.shopifyRequestOptions());
+            if (response.customers.length > 0) {
+                const existingCustomer = response.customers[0];
+                const customerId = existingCustomer.id;
+                if (existingCustomer.accepts_marketing === true) {
+                    throw new SkipExport_1.SkipExport("Customer is already signed up for email marketing");
+                }
+                const update = {
+                    customer: {
+                        id: customerId,
+                        accepts_marketing: true
+                    }
+                };
+                const putUrl = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`;
+                const options = this.shopifyRequestOptions();
+                options.body = update;
+                yield request.put(putUrl, options);
+                throw new SkipExport_1.SkipExport("Customer is updated through a PUT request");
+            }
+            const customer = {
+                email: signup.email,
+                first_name: (_a = signup.first_name) !== null && _a !== void 0 ? _a : "-",
+                last_name: (_b = signup.last_name) !== null && _b !== void 0 ? _b : "-",
+                accepts_marketing: true
+            };
+            return { customer: customer };
+        });
+    }
+    exportSale() {
+        var _a, _b, _c;
+        return __awaiter(this, void 0, void 0, function* () {
+            this.validateSalesConfiguration();
+            this.validateSale(this.data);
             const sale = this.data;
             const locationId = this.configuration.location_id_map[sale.source.shop_id];
             if (_.isNil(locationId)) {
@@ -36,7 +74,16 @@ class ShopifyTransform {
                 location_id: Number(locationId)
             };
             if (sale.summary.customer && sale.summary.customer.identifier) {
-                order.customer = { id: Number(sale.summary.customer.identifier) };
+                const customerId = Number(sale.summary.customer.identifier);
+                order.customer = { id: customerId };
+                const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`;
+                try {
+                    const customerResult = yield request.get(url, this.shopifyRequestOptions());
+                    order.buyer_accepts_marketing = (_a = customerResult.customer) === null || _a === void 0 ? void 0 : _a.accepts_marketing;
+                }
+                catch (error) {
+                    console.warn(`Failed looking up customer: ${error}`);
+                }
             }
             if (this.configuration.tax_type === TaxType.VAT) {
                 order.taxes_included = true;
@@ -50,44 +97,51 @@ class ShopifyTransform {
                         value: sale.comment
                     }];
             }
-            const shippingLine = this.shippingLines(sale, this.configuration.ecom_id)[0];
-            const shipping = shippingLine.behavior.shipping;
-            const shippingAddress = shipping.address;
-            const shippingCustomerInfo = shipping.customer_info;
-            const parsedName = parsefullname.parseFullName(shippingAddress.name);
-            const shopifyShipping = {};
-            shopifyShipping.first_name = parsedName.first || "";
-            shopifyShipping.last_name = parsedName.last || "";
-            shopifyShipping.address1 = shippingAddress.street;
-            shopifyShipping.city = shippingAddress.city;
-            shopifyShipping.zip = shippingAddress.postal_code;
-            shopifyShipping.country_code = shippingAddress.country_code || this.configuration.default_country_code;
-            shopifyShipping.phone = shippingCustomerInfo.phone;
-            if (shipping.method_id) {
-                const shopifyShippingLine = {
-                    code: shipping.method_id,
-                    price: shippingLine.total,
-                    title: shipping.method_id
-                };
-                const taxes = this.shopifyTaxLines(shippingLine.taxes);
-                if (taxes.length > 0) {
-                    shopifyShippingLine.tax_lines = taxes;
+            if (this.configuration.shop_sales !== true) {
+                const shippingLine = this.shippingLines(sale, this.configuration.ecom_id)[0];
+                const shipping = shippingLine.behavior.shipping;
+                const shippingAddress = shipping.address;
+                const shippingCustomerInfo = shipping.customer_info;
+                const parsedName = parsefullname.parseFullName(shippingAddress.name);
+                const shopifyShipping = {};
+                shopifyShipping.first_name = parsedName.first || "";
+                shopifyShipping.last_name = parsedName.last || "";
+                shopifyShipping.address1 = shippingAddress.street;
+                shopifyShipping.city = shippingAddress.city;
+                shopifyShipping.zip = shippingAddress.postal_code;
+                shopifyShipping.country_code = shippingAddress.country_code || this.configuration.default_country_code;
+                shopifyShipping.phone = shippingCustomerInfo.phone;
+                if (shipping.method_id) {
+                    const shopifyShippingLine = {
+                        code: shipping.method_id,
+                        price: shippingLine.total,
+                        title: shipping.method_id
+                    };
+                    const taxes = this.shopifyTaxLines(shippingLine.taxes);
+                    if (taxes.length > 0) {
+                        shopifyShippingLine.tax_lines = taxes;
+                    }
+                    order.shipping_lines = [shopifyShippingLine];
                 }
-                order.shipping_lines = [shopifyShippingLine];
+                order.shipping_address = shopifyShipping;
+                order.email = shippingCustomerInfo.email;
             }
-            order.shipping_address = shopifyShipping;
-            order.email = shippingCustomerInfo.email;
+            else {
+                order.fulfillment_status = "fulfilled";
+                order.fulfillments = [
+                    {
+                        "location_id": Number(locationId)
+                    }
+                ];
+            }
             const shopifyLineItems = [];
-            for (const lineItem of this.ecommerceLines(sale, this.configuration.ecom_id)) {
+            const lineItems = (this.configuration.shop_sales === true) ? this.nonEcommerceLines(sale) : this.ecommerceLines(sale, this.configuration.ecom_id);
+            for (const lineItem of lineItems) {
                 let variantId = lineItem.variant_id;
                 if (_.isNil(variantId)) {
                     try {
-                        const shopifyProduct = yield this.shopifyProduct(lineItem.id, this.configuration);
-                        if (shopifyProduct &&
-                            shopifyProduct.product &&
-                            shopifyProduct.product.variants &&
-                            shopifyProduct.product.variants[0] &&
-                            shopifyProduct.product.variants[0].id) {
+                        const shopifyProduct = yield this.shopifyProduct(lineItem.id);
+                        if ((_c = (_b = shopifyProduct === null || shopifyProduct === void 0 ? void 0 : shopifyProduct.product) === null || _b === void 0 ? void 0 : _b.variants[0]) === null || _c === void 0 ? void 0 : _c.id) {
                             variantId = `${shopifyProduct.product.variants[0].id}`;
                         }
                     }
@@ -103,20 +157,21 @@ class ShopifyTransform {
                     quantity: lineItem.quantity,
                     variant_id: Number(variantId)
                 };
-                const taxes = this.shopifyTaxLines(shopifyLineItem.takes);
+                const taxes = this.shopifyTaxLines(lineItem.taxes);
                 if (taxes.length > 0) {
                     shopifyLineItem.tax_lines = taxes;
                 }
                 shopifyLineItems.push(shopifyLineItem);
             }
             order.line_items = shopifyLineItems;
+            order.tags = "ka-ching";
             order.financial_status = "paid";
             return { order: order };
         });
     }
     exportStockEvent() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.validateStockConfiguration(this.configuration);
+            this.validateStockConfiguration();
             if (_.isNil(this.data.stock_location_id)) {
                 throw new Error("Missing stock location id");
             }
@@ -131,7 +186,7 @@ class ShopifyTransform {
             if (_.isNaN(Number(productId))) {
                 throw new SkipExport_1.SkipExport(`SkipExport - Non compatible Shopify id ${productId}`);
             }
-            const inventoryItemId = yield this.inventoryItemId(productId, this.data.variant_id, this.configuration);
+            const inventoryItemId = yield this.inventoryItemId(productId, this.data.variant_id);
             if (_.isNil(inventoryItemId)) {
                 throw new Error(`Failed to find inventory item id from product id ${productId} and variant id ${this.data.variant_id}`);
             }
@@ -153,16 +208,16 @@ class ShopifyTransform {
             return result;
         });
     }
-    inventoryItemId(productId, variantId, configuration) {
+    inventoryItemId(productId, variantId) {
+        var _a, _b, _c;
         return __awaiter(this, void 0, void 0, function* () {
             let inventoryItemId = undefined;
+            const configuration = this.configuration;
             if (!_.isNil(variantId)) {
-                const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2020-01/variants/${variantId}.json`;
+                const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/variants/${variantId}.json`;
                 try {
-                    const shopifyVariantResult = yield request.get(url, this.shopifyRequestOptions(configuration));
-                    if (shopifyVariantResult &&
-                        shopifyVariantResult.variant &&
-                        shopifyVariantResult.variant.inventory_item_id) {
+                    const shopifyVariantResult = yield request.get(url, this.shopifyRequestOptions());
+                    if ((_a = shopifyVariantResult === null || shopifyVariantResult === void 0 ? void 0 : shopifyVariantResult.variant) === null || _a === void 0 ? void 0 : _a.inventory_item_id) {
                         inventoryItemId = `${shopifyVariantResult.variant.inventory_item_id}`;
                     }
                 }
@@ -172,12 +227,8 @@ class ShopifyTransform {
             }
             else {
                 try {
-                    const shopifyProductResult = yield this.shopifyProduct(productId, configuration);
-                    if (shopifyProductResult &&
-                        shopifyProductResult.product &&
-                        shopifyProductResult.product.variants &&
-                        shopifyProductResult.product.variants[0] &&
-                        shopifyProductResult.product.variants[0].inventory_item_id) {
+                    const shopifyProductResult = yield this.shopifyProduct(productId);
+                    if ((_c = (_b = shopifyProductResult === null || shopifyProductResult === void 0 ? void 0 : shopifyProductResult.product) === null || _b === void 0 ? void 0 : _b.variants[0]) === null || _c === void 0 ? void 0 : _c.inventory_item_id) {
                         inventoryItemId = `${shopifyProductResult.product.variants[0].inventory_item_id}`;
                     }
                 }
@@ -188,14 +239,14 @@ class ShopifyTransform {
             return inventoryItemId;
         });
     }
-    shopifyProduct(productId, configuration) {
+    shopifyProduct(productId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/2020-01/products/${productId}.json`;
-            return yield request.get(url, this.shopifyRequestOptions(configuration));
+            const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/products/${productId}.json`;
+            return yield request.get(url, this.shopifyRequestOptions());
         });
     }
-    shopifyRequestOptions(configuration) {
-        const base64 = Buffer.from(`${configuration.api_key}:${configuration.password}`).toString("base64");
+    shopifyRequestOptions() {
+        const base64 = Buffer.from(`${this.configuration.api_key}:${this.configuration.password}`).toString("base64");
         const basicAuthValue = `Basic ${base64}`;
         const options = {
             headers: {
@@ -221,13 +272,31 @@ class ShopifyTransform {
             return !_.isNil(line.ecom_id) && line.ecom_id === ecomId && _.isNil(behavior.shipping);
         });
     }
+    nonEcommerceLines(sale) {
+        return (sale.summary.line_items || []).filter((line) => {
+            return _.isNil(line.ecom_id);
+        });
+    }
     shippingLines(sale, ecomId) {
         return (sale.summary.line_items || []).filter((line) => {
             const behavior = line.behavior || {};
             return !_.isNil(behavior.shipping) && !_.isNil(line.ecom_id) && line.ecom_id === ecomId;
         });
     }
-    validateSalesConfiguration(configuration) {
+    validateNewsletterConfiguration() {
+        const configuration = this.configuration;
+        if (_.isNil(configuration.api_key) || typeof (configuration.api_key) !== "string") {
+            throw new Error("shopify api key is missing from configuration");
+        }
+        if (_.isNil(configuration.password) || typeof (configuration.password) !== "string") {
+            throw new Error("shopify password is missing from configuration");
+        }
+        if (_.isNil(configuration.shopify_id) || typeof (configuration.shopify_id) !== "string") {
+            throw new Error("shopify shop id is missing from configuration");
+        }
+    }
+    validateSalesConfiguration() {
+        const configuration = this.configuration;
         if (_.isNil(configuration.api_key) || typeof (configuration.api_key) !== "string") {
             throw new Error("shopify api key is missing from configuration");
         }
@@ -250,7 +319,8 @@ class ShopifyTransform {
             throw new Error("shopify ecom_id is missing from configuration");
         }
     }
-    validateStockConfiguration(configuration) {
+    validateStockConfiguration() {
+        const configuration = this.configuration;
         if (_.isNil(configuration.api_key) || typeof (configuration.api_key) !== "string") {
             throw new Error("shopify api key is missing from configuration");
         }
@@ -264,21 +334,32 @@ class ShopifyTransform {
             throw new Error("shopify location_id_map is missing from configuration");
         }
     }
-    validateSale(sale, configuration) {
-        if (sale.voided || sale.summary.is_return) {
-            throw new Error(`Sale is either voided ${sale.voided} or is return ${sale.is_return}`);
+    validateSale(sale) {
+        if (this.configuration.shop_orders === true) {
+            if (sale.voided) {
+                throw new Error(`Sale is voided`);
+            }
+            const nonEcomLineItems = this.nonEcommerceLines(sale);
+            if (nonEcomLineItems.length === 0) {
+                throw new Error(`No non-ecommerce line items on sale`);
+            }
         }
-        const ecomLineItems = this.ecommerceLines(sale, configuration.ecom_id);
-        if (ecomLineItems.length === 0) {
-            throw new Error(`No ecommerce line items on sale`);
-        }
-        const ecomLineItemsWithoutProductId = ecomLineItems.filter((line) => { return !_.isNil(line.id); });
-        if (ecomLineItemsWithoutProductId.length !== ecomLineItems.length) {
-            throw new Error(`1 or more ecommerce lines are missing product id`);
-        }
-        const shippingLines = this.shippingLines(sale, configuration.ecom_id);
-        if (shippingLines.length !== 1) {
-            throw new Error(`Invalid number of shipping lines on sale ${shippingLines.length}`);
+        else {
+            if (sale.voided || sale.summary.is_return) {
+                throw new Error(`Sale is either voided ${sale.voided} or is return ${sale.is_return}`);
+            }
+            const ecomLineItems = this.ecommerceLines(sale, this.configuration.ecom_id);
+            if (ecomLineItems.length === 0) {
+                throw new Error(`No ecommerce line items on sale`);
+            }
+            const ecomLineItemsWithoutProductId = ecomLineItems.filter((line) => { return !_.isNil(line.id); });
+            if (ecomLineItemsWithoutProductId.length !== ecomLineItems.length) {
+                throw new Error(`1 or more ecommerce lines are missing product id`);
+            }
+            const shippingLines = this.shippingLines(sale, this.configuration.ecom_id);
+            if (shippingLines.length !== 1) {
+                throw new Error(`Invalid number of shipping lines on sale ${shippingLines.length}`);
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EconomicTransform = void 0;
 const _ = require("lodash");
 const SkipExport_1 = require("./SkipExport");
 function lookupYear(years, date) {

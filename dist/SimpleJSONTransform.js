@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.SimpleJSONTransform = void 0;
 const numeral = require("numeral");
 class SimpleJSONTransform {
     constructor(configuration, data) {
