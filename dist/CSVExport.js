@@ -134,7 +134,7 @@ class CSVExport {
             const outputRows = [];
             for (const index in sale.summary.line_items) {
                 const lineItem = sale.summary.line_items[index];
-                const amountProperties = ["base_price", "retail_price", "sales_tax_amount", "sub_total", "total", "total_tax_amount", "vat_amount"];
+                const amountProperties = ["base_price", "retail_price", "sales_tax_amount", "sub_total", "total", "total_tax_amount", "vat_amount", "cost_price", "margin", "margin_total"];
                 const valueProperties = ["barcode", "id", "image_url", "quantity", "variant_id", "product_group"];
                 const localizedProperties = ["name", "variant_name"];
                 const discountAmount = numeral(0).add(lineItem["retail_price"] || 0).subtract(lineItem["sub_total"] || 0);
