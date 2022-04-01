@@ -152,6 +152,7 @@ export class CSVExport {
                 dataValues["discount_amount"] = `"${this.formatNumber(discountAmount.format("0.00"))}"`
 
                 for (const property of amountProperties) {
+                    delete dataValues[property]
                     if (lineItem[property] !== null && lineItem[property] !== undefined) {
                         const amount = numeral(0).add(lineItem[property])
                         const formatted = this.formatNumber(amount.format("0.00"))
@@ -159,12 +160,14 @@ export class CSVExport {
                     }
                 }
                 for (const property of valueProperties) {
+                    delete dataValues[property]
                     if (lineItem[property] !== null && lineItem[property] !== undefined) {
                         dataValues[property] = `"${lineItem[property]}"`
                     }
                 }
 
                 for (const property of localizedProperties) {
+                    delete dataValues[property]
                     if (lineItem[property] !== null && lineItem[property] !== undefined) {
                         dataValues[property] = `"${localize(lineItem[property], "da")}"`
                     }
@@ -178,6 +181,7 @@ export class CSVExport {
     
                 const sourceProperties = ["cashier_id", "cashier_name", "register_id", "register_name", "market_id", "market_name", "shop_id", "shop_name"]
                 for (const property of sourceProperties) {
+                    delete dataValues[property]
                     if (sale.source[property] !== null) {
                         dataValues[property] = `"${sale.source[property]}"`
                     }
