@@ -1,10 +1,24 @@
 import * as _ from "lodash"
 import { SkipExport } from "./SkipExport"
-import * as moment from "moment-timezone"
+import * as dayjs from "dayjs"
+import * as utc from "dayjs/plugin/utc"
+import * as dayjstimezone from "dayjs/plugin/timezone"
+
+dayjs.extend(utc)
+dayjs.extend(dayjstimezone)
 
 interface Account {
     account: number,
     description: string
+}
+
+interface Config {
+    skipZeroAmountTransactions: boolean,
+    sourceDescription: string,
+    departmentalDistribution?: any,
+    currencyCode: string,
+    date: string,
+    differenceTaxCode: string | undefined
 }
 
 function lookupYear(years: any, date: string): string {
@@ -74,8 +88,15 @@ export class EconomicTransform {
         }
     }
 
-    accountDiffLookup(paymentType: string, comment: string): Account {
+    accountDiffLookup(paymentType: string, comment: string, subType?: string): Account {
         const key = paymentTypeKey(paymentType)
+        if (subType !== undefined) {
+            const subTypeSpecificKey = `${key}-${subType}`
+            const subTypeSpecificAccount = this.configuration.account_map.diffs[subTypeSpecificKey]
+            if (!_.isNil(subTypeSpecificAccount)) {
+                return subTypeSpecificAccount
+            }
+        }
         const account = this.configuration.account_map.diffs[key]
         if (!_.isNil(account)) {
             return {
@@ -101,6 +122,27 @@ export class EconomicTransform {
             description: fallback.description + " " + paymentType,
             account: fallback.account
         }
+    }
+
+    accountGenericLookup(type: "sale" | "return" | "expense", expenseCode?: string): Account {
+        if (type === "return" && !_.isNil(this.configuration.account_map.general.return)) {
+            return this.configuration.account_map.general.return
+        } else if (type === "expense") {
+            // Use an expense account config if present - otherwise fall back to return 
+            // (as an expense is more similar to a return than a sale)
+            if (!_.isNil(expenseCode)) {
+                const key = `expense-${expenseCode}`
+                if (!_.isNil(this.configuration.account_map.general[key])) {
+                    return this.configuration.account_map.general[key]
+                }
+            }
+            if (!_.isNil(this.configuration.account_map.general.expense)) {
+                return this.configuration.account_map.general.expense
+            } else if (!_.isNil(this.configuration.account_map.general.return)) {
+                return this.configuration.account_map.general.return
+            }
+        }
+        return this.configuration.account_map.general.sale
     }
 
     localize(input: any, language: string | undefined): string {
@@ -198,7 +240,7 @@ export class EconomicTransform {
         if (lines.length === 0) {
             throw new SkipExport("No invoiceable line items")
         }
-        const timestamp = moment(order.state.created * 1000).tz(timezone)
+        const timestamp = dayjs(order.state.created * 1000).tz(timezone)
         const date = timestamp.format("YYYY-MM-DD")
         const invoice: any = {
             date: date,
@@ -312,7 +354,7 @@ export class EconomicTransform {
             const vatCode = this.lookupVatCode(totals.rate, totals.type, isExpense)
             if (!_.isNil(totals.expense_code)) {
                 if (!_.isNil(parameters.account_map.general[`expense-${totals.expense_code}`]))
-                saleAccount = parameters.account_map.general[`expense-${totals.expense_code}`]
+                    saleAccount = parameters.account_map.general[`expense-${totals.expense_code}`]
             }
             const voucher: any = {
                 text: saleAccount.description + sourceDesc,
@@ -380,7 +422,429 @@ export class EconomicTransform {
         const parameters = this.configuration
         const shopId = statement.source.shop_id
         const skipDescription = parameters.skip_description ?? false
+        const exportType = parameters.export_type ?? "diffs"
 
+        switch (exportType) {
+            case "totals":
+                return this.registerCloseStatementTotalsExport(statement, parameters, skipDescription, shopId)
+            case "diffs":
+            default:
+                return this.registerCloseStatementDiffExport(statement, parameters, skipDescription, shopId)
+        }
+    }
+
+    private addVoucher(vouchers: any[], amount: number | undefined, vatCode: string | undefined, account: Account, currencyCode: string | undefined, config: Config, negate: boolean = false) {
+        if (_.isNil(amount)) {
+            return
+        }
+        if (config.skipZeroAmountTransactions === true && amount === 0) {
+            return
+        }
+        const voucher: any = {
+            text: account.description + config.sourceDescription,
+            amount: negate ? -amount : amount,
+            account: {
+                accountNumber: account.account
+            },
+            currency: {
+                code: currencyCode ?? config.currencyCode
+            },
+            date: config.date
+        }
+        if (!_.isNil(vatCode)) {
+            voucher.vatAccount = {
+                vatCode: vatCode
+            }
+        }
+        if (!_.isNil(config.departmentalDistribution)) {
+            voucher.departmentalDistribution = config.departmentalDistribution
+        }
+        vouchers.push(voucher)
+        return voucher
+    }
+
+    private addGenericVoucher(vouchers: any[], amount: number | undefined, vatCode: string | undefined, account: Account, config: Config, negate: boolean = false) {
+        return this.addVoucher(vouchers, amount, vatCode, account, undefined, config, negate)
+    }
+
+    private addForeignCurrencyVoucher(vouchers: any[], amount: number | undefined, vatCode: string | undefined, account: Account, currencyCode: string | undefined, foreignCurrencyTotal: number, baseCurrencyTotal: number | undefined, config: Config, negate: boolean = false) {
+        const voucher = this.addVoucher(vouchers, amount, vatCode, account, currencyCode, config, negate)
+        if (voucher === undefined) {
+            return
+        }
+        // No need adding exchange rates etc. if we are actually counting in base currency
+        if (currencyCode === config.currencyCode) {
+            return
+        }
+        if (_.isNil(amount) || amount === 0) {
+            return
+        }
+        if (foreignCurrencyTotal === 0) {
+            return
+        }
+        if (_.isNil(baseCurrencyTotal)) {
+            return
+        }
+        const exchangeRate = baseCurrencyTotal * 100 / foreignCurrencyTotal
+        // Round to 6 decimals - and divide by a 100 more since exchange rate is already in pct.
+        voucher.baseCurrencyAmount = Math.round(amount * exchangeRate * 1000000) / 100000000
+        // Exchange rate must be rounded to 6 decimals
+        voucher.exchangeRate = Math.round(exchangeRate * 1000000) / 1000000
+    }
+
+    private getReconciliation(statement: any, paymentType: string, currencyCode: string): any | undefined {
+        const reconciliations: any[] = statement.reconciliations
+        if (_.isNil(reconciliations)) { return undefined }
+        return reconciliations.find(r => { return r.payment_type_identifier === paymentType && r.currency_code === currencyCode })
+    }
+
+    private registerCloseStatementTotalsExport(statement: any, parameters: any, skipDescription: boolean, shopId: string) {
+        let date: string
+        if (statement.timing) {
+            const dateString: string = statement.timing.timestamp_date_string
+            const comps = dateString.split("-")
+            date = `${comps[0]}-${comps[1]}-${comps[2]}`
+        } else {
+            const timestampNumber = statement.reconciliation_time * 1000
+            const timestamp = new Date(timestampNumber)
+            date = timestamp.toISOString().split("T")[0]
+        }
+
+        const skipZeroAmountTransactions: boolean = parameters.skip_zero_amount_transactions ?? false
+        const yearString = lookupYear(parameters.fiscal_years, date)
+
+        const journalEntry: any = {}
+        journalEntry.accountingYear = { year: yearString }
+        journalEntry.journal = { journalNumber: parameters.journal_number }
+        const vouchers: any[] = []
+        const sourceDesc = skipDescription ? "" : sourceDescription(statement.source) + " statement number: " + statement.sequence_number
+        const differenceTaxCode: string | undefined = parameters.difference_tax_code ?? undefined
+
+        let departmentalDistribution: any = undefined
+        if (typeof (parameters.shop_map) === "object" && parameters.shop_map[shopId]) {
+            const department = parseInt(parameters.shop_map[shopId])
+            departmentalDistribution = {
+                departmentalDistributionNumber: department,
+                type: "department"
+            }
+        }
+        const config: Config = {
+            skipZeroAmountTransactions: skipZeroAmountTransactions,
+            sourceDescription: sourceDesc,
+            departmentalDistribution: departmentalDistribution,
+            currencyCode: statement.base_currency_code,
+            date: date,
+            differenceTaxCode: differenceTaxCode
+        }
+
+        // 1. Handle base currency cash specially first
+        // 2. Then foreign currency cash
+        // 3. Then all other reconciliations
+        // 4. Then handle cash.rounding specifically since it is the only payment type that does not have any
+        // corresponding reconciliation steps. 
+
+        // 5. Handle sales
+        // 6. Handle returns
+        // 7. Handle expenses
+
+        // Start with the calculated 'reported' opening float rather than the counted one, in order to have
+        // something to add the diff against.
+        this.addVoucher(
+            vouchers,
+            statement.register_summary.cash_total_at_open - (statement.register_summary.cash_diff_at_open ?? 0),
+            undefined,
+            this.accountLookup("cash", "open"),
+            undefined,
+            config,
+            true
+        )
+
+        // Then add the diff from the day before. 
+        const comment = statement.register_summary.cash_diff_comment_at_open
+        this.addVoucher(
+            vouchers,
+            statement.register_summary.cash_diff_at_open,
+            config.differenceTaxCode,
+            this.accountDiffLookup("cash", comment, "open"),
+            undefined,
+            config,
+            true
+        )
+
+        const cashReconciliation = this.getReconciliation(statement, "cash", config.currencyCode)
+        if (!_.isNil(cashReconciliation)) {
+
+            // We exclude the deposited amount from the counted total
+            // so we only report the deposit of the amount into the
+            // deposit account
+            if (!_.isNil(cashReconciliation.deposited_amount)) {
+                const deposited = cashReconciliation.deposited_amount
+                const paymentType = cashReconciliation.payment_type_identifier
+                this.addVoucher(
+                    vouchers,
+                    deposited,
+                    undefined,
+                    this.accountDepositLookup(paymentType),
+                    undefined,
+                    config
+                )
+            }
+
+            this.addVoucher(
+                vouchers,
+                cashReconciliation.counted - (cashReconciliation.deposited_amount ?? 0),
+                undefined,
+                this.accountLookup("cash", "close"),
+                undefined,
+                config
+            )
+
+            // Finally add the diff
+            const counted = cashReconciliation.counted
+            const expected = cashReconciliation.total
+            const diff = counted - expected
+            if (diff !== 0) {
+                const comment = statement.comment || ""
+                this.addVoucher(
+                    vouchers,
+                    diff,
+                    config.differenceTaxCode,
+                    this.accountDiffLookup("cash", comment, "close"),
+                    undefined,
+                    config,
+                    true
+                )
+            }
+        }
+
+        // Handle all foreign currency cash reconciliations
+        for (const reconciliation of statement.reconciliations) {
+            const paymentType = reconciliation.payment_type_identifier
+
+            if (paymentType !== "cash") {
+                continue
+            }
+            if (reconciliation.currency_code === config.currencyCode) {
+                continue
+            }
+            this.handleReconciliation(vouchers, statement, reconciliation, paymentType, config)
+        }
+
+        // All non-cash reconciliations
+        for (const reconciliation of statement.reconciliations) {
+            const paymentType = reconciliation.payment_type_identifier
+            if (paymentType === "cash") {
+                continue
+            }
+
+            this.handleReconciliation(vouchers, statement, reconciliation, paymentType, config)
+        }
+
+        // Handle cash rounding specially since there is no reconciliation of that payment.
+        this.handleCashRounding(vouchers, statement, config)
+
+        // Handle sales - including taxes
+        // Handle returns - including taxes
+        // Handle expenses - including opposite direction taxes
+        this.addGenericVouchers(vouchers, statement, config, "sale")
+        this.addGenericVouchers(vouchers, statement, config, "return")
+
+        // Look at individual expense codes
+        const expenses = statement.register_summary.expenses ?? {}
+        if (!_.isNil(expenses.expenses_by_id)) {
+            for (const expenseId in expenses.expenses_by_id) {
+                const expense = expenses.expenses_by_id[expenseId]
+                for (const taxSummary of expense.tax_summaries ?? []) {
+                    const amount = (taxSummary.source_amount ?? 0) + (taxSummary.amount ?? 0)
+                    const isExpense = true
+                    const vatCode = this.lookupVatCode(taxSummary.rate, taxSummary.type, isExpense)
+                    this.addGenericVoucher(
+                        vouchers,
+                        amount,
+                        vatCode,
+                        this.accountGenericLookup("expense", expenseId),
+                        config,
+                        true
+                    )
+                }
+            }
+        } else {
+            this.addGenericVouchers(vouchers, statement, config, "expense")
+        }
+
+        journalEntry.entries = { financeVouchers: vouchers.reverse() }
+
+        return journalEntry
+    }
+
+    private handleCashRounding(vouchers: any[], statement: any, config: Config) {
+        const transactions: any[] = statement.register_summary?.all?.transactions ?? []
+        const matchingPaymentType = transactions.find(t => { return t.type === "cash.rounding" })
+        if (!_.isNil(matchingPaymentType)) {
+            const byCurrencies = matchingPaymentType.totals?.all?.by_currency ?? {}
+            for (const currency in byCurrencies) {
+                const byCurrency = byCurrencies[currency]
+                const total = byCurrency.foreign_currency_total ?? byCurrency.total
+                const baseCurrencyTotal = byCurrency.total
+
+                this.addForeignCurrencyVoucher(
+                    vouchers,
+                    total,
+                    config.differenceTaxCode,
+                    this.accountDiffLookup("cash", "", "rounding"),
+                    currency,
+                    total,
+                    baseCurrencyTotal,
+                    config
+                )
+            }
+        }
+    }
+
+    private handleReconciliation(vouchers: any[], statement: any, reconciliation: any, paymentType: string, config: Config) {
+        // NOTE: Here be dragons! The reconciliation total is always in
+        // the foreign currency, because reconciliations is about counting.
+        // We _may_ have a base_currency_total as well (from POS 18.4.0)
+        // The totals reported in the transactions are in base currency, with 
+        // the possible foreign currency reported seperately
+
+        if (!_.isNil(reconciliation.deposited_amount)) {
+            const deposited = reconciliation.deposited_amount
+            const paymentType = reconciliation.payment_type_identifier
+            this.addForeignCurrencyVoucher(
+                vouchers,
+                deposited,
+                undefined,
+                this.accountDepositLookup(paymentType),
+                reconciliation.currency_code,
+                reconciliation.total,
+                reconciliation.base_currency_total,
+                config
+            )
+
+            // If there are any amounts that are not deposited (not currently the case for foreign currency cash, but could change in the future)
+            // then we register them as income.
+            const diff = reconciliation.counted - reconciliation.deposited_amount
+            if (diff !== 0) {
+                this.addForeignCurrencyVoucher(
+                    vouchers,
+                    diff,
+                    config.differenceTaxCode,
+                    this.accountLookup(paymentType),
+                    reconciliation.currency_code,
+                    reconciliation.total,
+                    reconciliation.base_currency_total,
+                    config
+                )
+            }
+        } else {
+            // CARD PAYMENTS ARE NEVER DEPOSITED
+
+            const currencyCode = reconciliation.currency_code
+            const total = reconciliation.total
+            let remaining = total
+            console.log("A - paymentType", paymentType)
+
+            // Look up register_summary/all/transactions/(find type=paymenttype)/by_currency/{currency}
+            const transactions: any[] = statement.register_summary?.all?.transactions ?? []
+            const matchingPaymentType = transactions.find(t => { return t.type === paymentType })
+            if (!_.isNil(matchingPaymentType)) {
+                console.log("B - matching paymentType - currency code", currencyCode)
+                const byCurrency = matchingPaymentType.totals?.all?.by_currency[currencyCode]
+                if (!_.isNil(byCurrency)) {
+                    console.log("C - matching currency")
+
+                    const byCardType = byCurrency.by_card_type
+                    if (!_.isNil(byCardType)) {
+                        console.log("D - has by_card_type")
+                        for (const cardType in byCardType) {
+                            console.log("E - card type", cardType)
+                            const totals = byCardType[cardType]
+                            const total = (currencyCode === config.currencyCode) ? (totals?.total ?? 0) : (totals?.foreign_currency_total ?? 0)
+                            remaining -= total
+
+                            // voucher per card type
+                            this.addForeignCurrencyVoucher(
+                                vouchers,
+                                total,
+                                undefined,
+                                this.accountLookup(paymentType, cardType),
+                                reconciliation.currency_code,
+                                reconciliation.total,
+                                reconciliation.base_currency_total,
+                                config
+                            )
+                        }
+                    }
+                }
+            }
+            if (Math.abs(remaining) >= 0.01) {
+                // voucher for remaining
+                this.addForeignCurrencyVoucher(
+                    vouchers,
+                    remaining,
+                    undefined,
+                    this.accountLookup(paymentType),
+                    reconciliation.currency_code,
+                    reconciliation.total,
+                    reconciliation.base_currency_total,
+                    config
+                )
+            }
+        }
+        if (reconciliation.should_be_reconciled && !_.isNil(reconciliation.counted)) {
+            const counted = reconciliation.counted
+            const expected = reconciliation.total
+            const diff = counted - expected
+            if (diff !== 0) {
+                const paymentType = reconciliation.payment_type_identifier
+
+                const comment = statement.comment ?? ""
+                this.addForeignCurrencyVoucher(
+                    vouchers,
+                    diff,
+                    config.differenceTaxCode,
+                    this.accountDiffLookup(paymentType, comment, "close"),
+                    reconciliation.currency_code,
+                    reconciliation.total,
+                    reconciliation.base_currency_total,
+                    config,
+                    true
+                )
+            }
+        }
+    }
+
+    private addGenericVouchers(vouchers: any[], statement: any, config: Config, type: "sale" | "return" | "expense") {
+        let summaries: any[] = []
+        let isExpense = false
+        switch (type) {
+            case "sale":
+                summaries = statement.register_summary.sales?.tax_summaries ?? []
+                break
+            case "return":
+                summaries = statement.register_summary.returns?.tax_summaries ?? []
+                break
+            case "expense":
+                isExpense = true
+                summaries = statement.register_summary.expenses?.tax_summaries ?? []
+                break
+        }
+        for (const taxSummary of summaries) {
+            const amount = (taxSummary.source_amount ?? 0) + (taxSummary.amount ?? 0)
+            const vatCode = this.lookupVatCode(taxSummary.rate, taxSummary.type, isExpense)
+            this.addGenericVoucher(
+                vouchers,
+                amount,
+                vatCode,
+                this.accountGenericLookup(type),
+                config,
+                true
+            )
+        }
+    }
+
+    private registerCloseStatementDiffExport(statement: any, parameters: any, skipDescription: boolean, shopId: string) {
         let date: string
         if (statement.timing) {
             const dateString: string = statement.timing.timestamp_date_string
@@ -399,6 +863,7 @@ export class EconomicTransform {
         journalEntry.journal = { journalNumber: parameters.journal_number }
         const vouchers: any[] = []
         const sourceDesc = skipDescription ? "" : sourceDescription(statement.source) + " statement number: " + statement.sequence_number
+        const differenceTaxCode: string | undefined = parameters.difference_tax_code ?? undefined
 
         let departmentalDistribution: any = undefined
         if (typeof (parameters.shop_map) === "object" && parameters.shop_map[shopId]) {
@@ -415,7 +880,7 @@ export class EconomicTransform {
             const paymentTypeAccount = this.accountLookup("cash")
             const diffAccount = this.accountDiffLookup("cash", comment)
             const voucher1: any = {
-                text: diffAccount.description + sourceDesc,
+                text: paymentTypeAccount.description + sourceDesc,
                 amount: diff,
                 account: {
                     accountNumber: paymentTypeAccount.account
@@ -439,6 +904,11 @@ export class EconomicTransform {
                     code: statement.base_currency_code
                 },
                 date: date
+            }
+            if (!_.isNil(differenceTaxCode)) {
+                voucher2.vatAccount = {
+                    vatCode: differenceTaxCode
+                }
             }
             if (!_.isNil(departmentalDistribution)) {
                 voucher2.departmentalDistribution = departmentalDistribution
@@ -481,6 +951,11 @@ export class EconomicTransform {
                             code: reconciliation.currency_code
                         },
                         date: date
+                    }
+                    if (!_.isNil(differenceTaxCode)) {
+                        voucher2.vatAccount = {
+                            vatCode: differenceTaxCode
+                        }
                     }
                     if (!_.isNil(departmentalDistribution)) {
                         voucher2.departmentalDistribution = departmentalDistribution
