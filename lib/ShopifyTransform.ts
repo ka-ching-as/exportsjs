@@ -1,6 +1,6 @@
 import * as _ from "lodash"
 import * as parsefullname from "parse-full-name"
-import fetch, { RequestInit } from "node-fetch"
+import { fetch } from "cross-fetch"
 import { SkipExport } from "./SkipExport"
 
 enum TaxType {
@@ -47,7 +47,7 @@ export class ShopifyTransform {
             const options = this.shopifyRequestOptions()
             options.body = JSON.stringify(update)
             options.method = "PUT"
-            await fetch(putUrl, options)
+            await  fetch(putUrl, options)
             throw new SkipExport("Customer is updated through a PUT request")
         }
 

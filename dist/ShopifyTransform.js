@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ShopifyTransform = void 0;
 const _ = require("lodash");
 const parsefullname = require("parse-full-name");
-const node_fetch_1 = require("node-fetch");
+const cross_fetch_1 = require("cross-fetch");
 const SkipExport_1 = require("./SkipExport");
 var TaxType;
 (function (TaxType) {
@@ -21,7 +21,7 @@ class ShopifyTransform {
         this.validateNewsletterConfiguration();
         const signup = this.data;
         const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/search.json?query=email:${signup.email}`;
-        const response = await node_fetch_1.default(url, this.shopifyRequestOptions());
+        const response = await cross_fetch_1.fetch(url, this.shopifyRequestOptions());
         const responseJson = await response.json();
         if (responseJson.customers.length > 0) {
             const existingCustomer = responseJson.customers[0];
@@ -39,7 +39,7 @@ class ShopifyTransform {
             const options = this.shopifyRequestOptions();
             options.body = JSON.stringify(update);
             options.method = "PUT";
-            await node_fetch_1.default(putUrl, options);
+            await cross_fetch_1.fetch(putUrl, options);
             throw new SkipExport_1.SkipExport("Customer is updated through a PUT request");
         }
         const customer = {
@@ -68,7 +68,7 @@ class ShopifyTransform {
             order.customer = { id: customerId };
             const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`;
             try {
-                const response = await node_fetch_1.default(url, this.shopifyRequestOptions());
+                const response = await cross_fetch_1.fetch(url, this.shopifyRequestOptions());
                 const customerResult = await response.json();
                 order.buyer_accepts_marketing = (_a = customerResult.customer) === null || _a === void 0 ? void 0 : _a.accepts_marketing;
             }
@@ -203,7 +203,7 @@ class ShopifyTransform {
         if (!_.isNil(variantId)) {
             const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/variants/${variantId}.json`;
             try {
-                const response = await node_fetch_1.default(url, this.shopifyRequestOptions());
+                const response = await cross_fetch_1.fetch(url, this.shopifyRequestOptions());
                 const shopifyVariantResult = await response.json();
                 if ((_a = shopifyVariantResult === null || shopifyVariantResult === void 0 ? void 0 : shopifyVariantResult.variant) === null || _a === void 0 ? void 0 : _a.inventory_item_id) {
                     inventoryItemId = `${shopifyVariantResult.variant.inventory_item_id}`;
@@ -228,7 +228,7 @@ class ShopifyTransform {
     }
     async shopifyProduct(productId) {
         const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/products/${productId}.json`;
-        const response = await node_fetch_1.default(url, this.shopifyRequestOptions());
+        const response = await cross_fetch_1.fetch(url, this.shopifyRequestOptions());
         return await response.json();
     }
     shopifyRequestOptions() {
