@@ -1,6 +1,6 @@
 import * as _ from "lodash"
 import * as parsefullname from "parse-full-name"
-import * as request from "request-promise"
+import fetch, { RequestInit } from "node-fetch"
 import { SkipExport } from "./SkipExport"
 
 enum TaxType {
@@ -27,9 +27,10 @@ export class ShopifyTransform {
 
         const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/search.json?query=email:${signup.email}`
 
-        const response = await request.get(url, this.shopifyRequestOptions())
-        if (response.customers.length > 0) {
-            const existingCustomer = response.customers[0]
+        const response = await fetch(url, this.shopifyRequestOptions())
+        const responseJson: any = await response.json()
+        if (responseJson.customers.length > 0) {
+            const existingCustomer = responseJson.customers[0]
             const customerId = existingCustomer.id
             if (existingCustomer.accepts_marketing === true) {
                 // Customer is already signed up for email marketing
@@ -44,8 +45,9 @@ export class ShopifyTransform {
             const putUrl = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`
 
             const options = this.shopifyRequestOptions()
-            options.body = update
-            await request.put(putUrl, options)
+            options.body = JSON.stringify(update)
+            options.method = "PUT"
+            await fetch(putUrl, options)
             throw new SkipExport("Customer is updated through a PUT request")
         }
 
@@ -101,9 +103,11 @@ export class ShopifyTransform {
 
             const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/customers/${customerId}.json`
             try {
-                const customerResult = await request.get(url, this.shopifyRequestOptions())
+
+                const response = await fetch(url, this.shopifyRequestOptions())
+                const customerResult: any = await response.json()
                 order.buyer_accepts_marketing = customerResult.customer?.accepts_marketing
-            } catch(error) {
+            } catch (error) {
                 console.warn(`Failed looking up customer: ${error}`)
             }
         }
@@ -266,7 +270,8 @@ export class ShopifyTransform {
         if (!_.isNil(variantId)) {
             const url = `https://${configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/variants/${variantId}.json`
             try {
-                const shopifyVariantResult = await request.get(url, this.shopifyRequestOptions())
+                const response = await fetch(url, this.shopifyRequestOptions())
+                const shopifyVariantResult: any = await response.json()
                 if (shopifyVariantResult?.variant?.inventory_item_id) {
                     inventoryItemId = `${shopifyVariantResult.variant.inventory_item_id}`
                 }
@@ -288,17 +293,17 @@ export class ShopifyTransform {
 
     private async shopifyProduct(productId: string): Promise<any> {
         const url = `https://${this.configuration.shopify_id}.myshopify.com/admin/api/${apiVersion}/products/${productId}.json`
-        return await request.get(url, this.shopifyRequestOptions())
+        const response = await fetch(url, this.shopifyRequestOptions())
+        return await response.json()
     }
 
-    private shopifyRequestOptions(): request.RequestPromiseOptions {
+    private shopifyRequestOptions(): RequestInit {
         const base64 = Buffer.from(`${this.configuration.api_key}:${this.configuration.password}`).toString("base64")
         const basicAuthValue = `Basic ${base64}`
-        const options: request.RequestPromiseOptions = {
+        const options: RequestInit = {
             headers: {
                 Authorization: basicAuthValue
-            },
-            json: true
+            }
         }
         return options
     }
