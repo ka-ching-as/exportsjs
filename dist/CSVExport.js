@@ -205,12 +205,6 @@ class CSVExport {
             if (!_.isNil(sale.summary.customer.address.postal_code)) {
                 dataValues["postal_code"] = sale.summary.customer.address.postal_code;
             }
-            if (!_.isNil(sale.summary.customer.address.country)) {
-                dataValues["country"] = sale.summary.customer.address.country;
-            }
-            if (!_.isNil(sale.summary.customer.address.country_code)) {
-                dataValues["country_code"] = sale.summary.customer.address.country_code;
-            }
         }
         if (!_.isNil(sale.summary.customer.customer_info)) {
             if (!_.isNil(sale.summary.customer.customer_info.phone)) {
