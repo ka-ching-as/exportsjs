@@ -178,34 +178,7 @@ class CSVExport {
                     }
                     if (!_.isNil(sale.summary.customer.organization_number)) {
                         dataValues["organization_number"] = sale.summary.customer.organization_number;
-                    }
-                    if (!_.isNil(sale.summary.customer.address)) {
-                        if (!_.isNil(sale.summary.customer.address.name)) {
-                            dataValues["customer_name"] = sale.summary.customer.address.name;
-                        }
-                        if (!_.isNil(sale.summary.customer.address.street)) {
-                            dataValues["street"] = sale.summary.customer.address.street;
-                        }
-                        if (!_.isNil(sale.summary.customer.address.city)) {
-                            dataValues["city"] = sale.summary.customer.address.city;
-                        }
-                        if (!_.isNil(sale.summary.customer.address.postal_code)) {
-                            dataValues["postal_code"] = sale.summary.customer.address.postal_code;
-                        }
-                        if (!_.isNil(sale.summary.customer.address.country)) {
-                            dataValues["country"] = sale.summary.customer.address.country;
-                        }
-                        if (!_.isNil(sale.summary.customer.address.country_code)) {
-                            dataValues["country_code"] = sale.summary.customer.address.country_code;
-                        }
-                    }
-                    if (!_.isNil(sale.summary.customer.customer_info)) {
-                        if (!_.isNil(sale.summary.customer.customer_info.phone)) {
-                            dataValues["phone"] = sale.summary.customer.customer_info.phone;
-                        }
-                        if (!_.isNil(sale.summary.customer.customer_info.email)) {
-                            dataValues["email"] = sale.summary.customer.customer_info.email;
-                        }
+                        this.setInfoOnB2BCustomer(sale, dataValues);
                     }
                 }
                 this.removeNewLines(dataValues);
@@ -217,6 +190,36 @@ class CSVExport {
             return outputRows.join("\n");
         }
         return this.outputRowShared(row, columns, sale, dataValues, count);
+    }
+    setInfoOnB2BCustomer(sale, dataValues) {
+        if (!_.isNil(sale.summary.customer.address)) {
+            if (!_.isNil(sale.summary.customer.address.name)) {
+                dataValues["customer_name"] = sale.summary.customer.address.name;
+            }
+            if (!_.isNil(sale.summary.customer.address.street)) {
+                dataValues["street"] = sale.summary.customer.address.street;
+            }
+            if (!_.isNil(sale.summary.customer.address.city)) {
+                dataValues["city"] = sale.summary.customer.address.city;
+            }
+            if (!_.isNil(sale.summary.customer.address.postal_code)) {
+                dataValues["postal_code"] = sale.summary.customer.address.postal_code;
+            }
+            if (!_.isNil(sale.summary.customer.address.country)) {
+                dataValues["country"] = sale.summary.customer.address.country;
+            }
+            if (!_.isNil(sale.summary.customer.address.country_code)) {
+                dataValues["country_code"] = sale.summary.customer.address.country_code;
+            }
+        }
+        if (!_.isNil(sale.summary.customer.customer_info)) {
+            if (!_.isNil(sale.summary.customer.customer_info.phone)) {
+                dataValues["phone"] = sale.summary.customer.customer_info.phone;
+            }
+            if (!_.isNil(sale.summary.customer.customer_info.email)) {
+                dataValues["email"] = sale.summary.customer.customer_info.email;
+            }
+        }
     }
     export() {
         let output = [];

@@ -16,5 +16,6 @@ export declare class CSVExport {
     private outputRowsForSale;
     private typeForSale;
     private outputRowForSale;
+    private setInfoOnB2BCustomer;
     export(): string;
 }
