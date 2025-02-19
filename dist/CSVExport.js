@@ -128,6 +128,7 @@ class CSVExport {
         }
     }
     outputRowForSale(row, columns, sale, filter) {
+        var _a;
         const dataValues = {};
         const count = 0;
         if (row.type.id === "line_items_each") {
@@ -165,6 +166,13 @@ class CSVExport {
                 dataValues["sequence_number"] = sale.sequence_number;
                 dataValues["timestamp"] = sale.timing.timestamp_string;
                 dataValues["timezone"] = sale.timing.timezone;
+                let externallyPaid = "";
+                for (const payment of (_a = sale.payments) !== null && _a !== void 0 ? _a : []) {
+                    if (payment.payment_type === "externally_paid") {
+                        externallyPaid = "true";
+                    }
+                }
+                dataValues["externally_paid"] = externallyPaid;
                 const sourceProperties = ["cashier_id", "cashier_name", "register_id", "register_name", "market_id", "market_name", "shop_id", "shop_name"];
                 for (const property of sourceProperties) {
                     delete dataValues[property];
